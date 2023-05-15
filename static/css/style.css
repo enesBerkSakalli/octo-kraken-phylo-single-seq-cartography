@@ -1,0 +1,216 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+.node {
+    cursor: pointer;
+}
+
+.alignment {
+    font-family: monospace;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.sequence {
+    display: flex;
+    align-items: center;
+}
+
+.id {
+    text-align: left;
+    margin-right: 10px;
+    min-width: 150px;
+}
+
+.letters {
+    display: flex;
+    align-items: center;
+}
+
+.letters span {
+    display: inline-block;
+    width: 1em;
+}
+
+span[data-letter="A"] {
+    color: red;
+  }
+
+.letters span[data-letter="A"] {
+    color: red;
+}
+
+.letters span[data-letter="C"] {
+    color: blue;
+}
+
+.letters span[data-letter="G"] {
+    color: green;
+}
+
+.letters span[data-letter="T"] {
+    color: purple;
+}
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+    font-family: Heebo, sans-serif;
+    background-color: rgb(39, 43, 77);
+    /*overflow: hidden;*/
+}
+
+
+.treeNavigation {
+    font-size: 0.80em;
+}
+
+.header {
+    display: flex;
+}
+
+.logo {
+    padding-top: 5px;
+    padding-inline: 20px;
+}
+
+.fa-film {
+    color: #ffff;
+}
+
+.menu-header {
+    padding-top: 5%;
+    padding-bottom: 5%;
+}
+
+.tools div {
+    margin-top: 3px;
+}
+
+.positionInput {
+    width: 70px !important;
+}
+
+.plotPercentSelect {
+    width: 100px !important;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    margin: 0;
+    text-align: center;
+}
+
+.stepSizeInput {
+    width: 100px !important;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    margin: 0;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.menu {
+    width: 350px;
+    height: 100%;
+    padding: 15px;
+    background-color: #373747;
+    color: white;
+}
+
+#application-container {
+    width: 100%;
+    height: 100%;
+    align-self: stretch;
+}
+
+.index-rect {
+    fill: #A2CBFA;
+    stroke-width: 1px;
+    stroke: #4390E1;
+}
+
+.index-rect:hover {
+    fill: #4390E1;
+    cursor: pointer;
+}
+
+.barContainer {
+    width: 100%;
+    height: 100%;
+    align-self: stretch;
+    justify-content: center;
+    text-align: center;
+    padding-left: 300px;
+}
+
+h1 {
+    font-size: 1.5em;
+}
+
+input {
+    padding: 0.2em;
+    border: 1px solid #ccc;
+}
+
+select {
+    padding: 0.2em;
+    border: 1px solid #ccc;
+}
+
+.left {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.right {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.bubble {
+    width: 100px;
+}
+
+
+#scaleBar {
+    margin-top: 10px;
+}
+
+.customButton {
+    background-color: #ff3e00;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 15px;
+}
+
+.customButton:hover {
+    background-color: #d33f0d;
+    /* Green */
+}
+
+
+.links {
+    stroke: rgb(55, 68, 105);
+    stroke-width: 1px;
+}

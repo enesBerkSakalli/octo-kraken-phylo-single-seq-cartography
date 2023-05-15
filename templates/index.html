@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Base HTML File written by Enes Berk Sakalli-->
+
+<head>
+  <meta charset="utf-8" />
+  <title>Single-Cell Phylo Carthography</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="../static/css/style.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script type="text/javascript" src="../static/js/ohm.min.js"></script>
+  <!-- UIkit CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/css/uikit.min.css" />
+  <!-- UIkit JS -->
+  <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit-icons.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <!-- beginning of menu -->
+    <div id="menu" class="menu">
+
+      <div class="row">
+        <a href="./layouts/fcg.html" class="uk-button uk-button-primary">FCG</a>
+      </div>
+    </div>
+
+    <div id="modal-sections" class="uk-modal-full" uk-modal>
+      <div class="uk-modal-dialog" uk-overflow-auto>
+        <button class="uk-modal-container" type="button" uk-close></button>
+        <div class="uk-modal-header">
+          <h2 class="uk-modal-title"></h2>
+        </div>
+        <div class="uk-modal-body">
+          <div id="msa-alignment-window" class="alignment">
+
+          </div>
+        </div>
+        <div class="uk-modal-footer uk-text-right">
+          <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
+          <button class="uk-button uk-button-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- This is the end of the Compare Modal -->
+    <div style="width: 95%; height: 95%">
+      <svg id="application-container" width="100%" height="95%">
+        <g id="application"></g>
+      </svg>
+    </div>
+
+    <script type="module">
+      import Gui from "../static/js/gui.js";
+      import constructTree from "../static/js/TreeConstructor.js";
+      import drawTree from "../static/js/TreeDrawer.js";
+      //================================================= Properties =======================================================
+      let gui = new Gui();
+      let applicationContainer = document.getElementById("application-container");
+      let width = applicationContainer.clientWidth;
+      let height = applicationContainer.clientHeight;
+
+      d3.json("../static/test/simulated_test.json")
+        .then((data) => {
+
+          let tree = data;
+
+          d3.select("#application").attr(
+            'transform',
+            `translate(${width / 2},${height / 2})`
+          );
+
+          tree = constructTree(
+            tree,
+            false,
+            'application-container',
+            {
+              'margin': width * 0.05,
+            }
+          );
+
+          drawTree(tree, 0, [], "", 1, "application");
+
+          d3.select('#application-container').call(
+            d3.zoom()
+              .on("zoom", zoomed)
+          );
+
+          function zoomed({ transform }) {         
+            let xZoomedTransform = (width / 2) + (transform.x / 2);
+            let yZoomedTransform = (height /2) + (transform.y / 2);
+            d3.select('#application').attr("transform", `translate(${xZoomedTransform}, ${yZoomedTransform})` + "scale(" + transform.k + ")");
+          }
+  
+        });
+    </script>
+</body>
+
+</html>

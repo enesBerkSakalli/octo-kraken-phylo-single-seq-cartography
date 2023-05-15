@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Directed Force Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+    <svg width="800" height="600"></svg>
+
+    <script>
+        const data = {
+            "name": "A",
+            "children": [
+                {
+                    "name": "B",
+                    "children": [
+                        { "name": "C" },
+                        { "name": "D" }
+                    ]
+                },
+                {
+                    "name": "E",
+                    "children": [
+                        { "name": "F" },
+                        { "name": "G" }
+                    ]
+                }
+            ]
+        };
+        
+        const nodes = [];
+        const links = [];
+
+        function extractNodesAndLinks(node, parent) {
+            nodes.push({
+                id: node.name,
+                parent: parent ? parent.name : null
+            });
+
+            if (node.children) {
+                node.children.forEach(child => {
+                    links.push({
+                        source: node.name,
+                        target: child.name
+                    });
+
+                    extractNodesAndLinks(child, node);
+                });
+            }
+        }
+
+        extractNodesAndLinks(data);
+
+        const svg = d3.select("svg");
+        const width = +svg.attr("width");
+        const height = +svg.attr("height");
+
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id))
+            .force("charge", d3.forceManyBody())
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const link = svg.append("g")
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 0.6)
+            .selectAll("line")
+            .data(links)
+            .join("line")
+            .attr("stroke-width", 2);
+
+        const node = svg.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .join("text")
+            .attr('text-anchor','middle')
+            .text(function(d) { 
+                return d.id;
+    		});
+
+        function dragStarted(d) {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+
+        function dragEnded(d) {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
+    </script>
+</body>
+
+</html>
