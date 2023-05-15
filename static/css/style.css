@@ -92,10 +92,6 @@ body {
     margin-top: 3px;
 }
 
-.positionInput {
-    width: 70px !important;
-}
-
 .plotPercentSelect {
     width: 100px !important;
     border-top-left-radius: 4px;
@@ -178,39 +174,7 @@ select {
     border-bottom-right-radius: 4px;
 }
 
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.bubble {
-    width: 100px;
-}
 
 
-#scaleBar {
-    margin-top: 10px;
-}
-
-.customButton {
-    background-color: #ff3e00;
-    border: none;
-    color: white;
-    padding: 8px 12px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 15px;
-}
-
-.customButton:hover {
-    background-color: #d33f0d;
-    /* Green */
-}
 
 
-.links {
-    stroke: rgb(55, 68, 105);
-    stroke-width: 1px;
-}

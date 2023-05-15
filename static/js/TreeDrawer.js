@@ -72,7 +72,6 @@ export class TreeDrawer {
 
     return function (d) {
       // previous svg instance
-
       // parse SVG to current positions/angles
       let pathArray = TreeDrawer.parser.parsePathData(
         d3.select(this).attr("d")
@@ -247,6 +246,9 @@ export class TreeDrawer {
         return d.data.name;
       });
 
+    let fontSize = (Math.sin(2 * Math.PI / this.root.leaves().length) * currentMaxRadius)
+    fontSize = fontSize / 2
+
     // UPDATE old elements present in new data
     textLabels
       .transition()
@@ -254,7 +256,7 @@ export class TreeDrawer {
       .duration(this.drawDuration)
       .attrTween("transform", this.getOrientTextInterpolator(currentMaxRadius))
       .attr("text-anchor", (d) => this.anchorCalc(d))
-      .style("font-size", `${(TreeMathUtils.calculateFontSize(nodes.length))}rem`);
+      .style("font-size", `${fontSize}px`);
 
     // ENTER new elements present in new data
     textLabels
@@ -265,15 +267,67 @@ export class TreeDrawer {
         return `label-${d.data.name}`;
       })
       .attr("dy", ".31em")
-      .style("font-size", `${TreeMathUtils.calculateFontSize(nodes.length)}rem`)
+      .style("font-size", `${fontSize}px`)
       .text((d) => {
         return `${d.data.name}`;
       })
       .attr("transform", (d) => this.orientText(d, currentMaxRadius - 25))
       .attr("text-anchor", (d) => this.anchorCalc(d))
-      .attr("font-weight", "bold")
       .attr("font-family", "Courier New")
       .style("fill", TreeDrawer.colorMap.defaultLabelColor);
+  }
+
+
+  joinBranchValues(currentMaxRadius) {
+
+    // Get all nodes from the hierarchy
+    const allNodes = this.root.descendants();
+    console.log(allNodes);
+    // Filter nodes that have the "value" property
+    const nodesWithValue = allNodes.filter(node => node.data.values);
+    // Access the nodes with "value" property
+    console.log(nodesWithValue);
+
+    // JOIN new data with old svg elements
+    const textLabels = this.getSvgContainer()
+      .selectAll(".branch-value")
+      .data(nodesWithValue, (d) => {
+        console.log(`boot-${d.data.name}`)
+        return `boot-${d.data.name}`;
+      });
+
+    let fontSize = (Math.sin(2 * Math.PI / this.root.leaves().length) * currentMaxRadius)
+    fontSize = fontSize / 4
+
+    // UPDATE old elements present in new data
+    textLabels
+      .transition()
+      .ease(d3.easeExpInOut)
+      .duration(this.drawDuration)
+      .attrTween("transform", this.getOrientTextInterpolator(currentMaxRadius))
+      .attr("text-anchor", (d) => this.anchorCalc(d))
+      .style("font-size", `${fontSize}px`);
+
+    // ENTER new elements present in new data
+    textLabels
+      .enter()
+      .append("text")
+      .attr("class", "label")
+      .attr("id", (d) => {
+        return `label-${d.data.name}`;
+      })
+      .attr("dy", ".33em")
+      .style("font-size", `${fontSize}px`)
+      .text((d) => {
+
+        return `${d.data.values.boot}`;
+
+      })
+      .attr("transform", (d) => this.orientText(d, d.radius - 25))
+      .attr("text-anchor", (d) => this.anchorCalc(d))
+      .attr("font-family", "Courier New")
+      .style("fill", TreeDrawer.colorMap.defaultLabelColor);
+
   }
 
   /**
@@ -722,4 +776,6 @@ export default function drawTree(
   currentTreeDrawer.updateExternalEdges(currentMaxRadius);
   currentTreeDrawer.updateLabels(currentMaxRadius);
   currentTreeDrawer.updateNodeCircles(currentMaxRadius);
+  currentTreeDrawer.joinBranchValues(currentMaxRadius);
+
 }
