@@ -4,28 +4,45 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Single-Cell Phylo Carthography</title>
+  <title>Phylo-Cello-Cartography</title>
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
   <link rel="stylesheet" href="../static/css/style.css" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script type="text/javascript" src="../static/js/ohm.min.js"></script>
+
   <!-- UIkit CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/css/uikit.min.css" />
   <!-- UIkit JS -->
   <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit-icons.min.js"></script>
+
+
+
+
 </head>
 
 <body>
   <div class="container">
     <!-- beginning of menu -->
-    <div id="menu" class="menu">
+    <div class="uk-card uk-card-default uk-card-body uk-width-1-6@s">
+      <ul class="uk-nav-default" uk-nav>
+        <li class="uk-nav-header">Phylo-Cello-Cartography</li>
+        <li id="button-row"></li>
+        <li>
+          <a href="./layouts/fcg.html"><span class="uk-margin-small-right" uk-icon="icon: social"></span>Graph</a>
+        </li>
+      </ul>
 
-      <div class="row">
-        <a href="./layouts/fcg.html" class="uk-button uk-button-primary">FCG</a>
-      </div>
+      <ul id="branch-values-vector" class="uk-nav uk-nav-sub">
+        <li class="uk-nav-header"><span class="uk-margin-small-right" uk-icon="icon: nut"></span>
+          Branch Values
+        </li>
+
+      </ul>
     </div>
+
+
+
 
     <div id="modal-sections" class="uk-modal-full" uk-modal>
       <div class="uk-modal-dialog" uk-overflow-auto>
@@ -35,22 +52,28 @@
         </div>
         <div class="uk-modal-body">
           <div id="msa-alignment-window" class="alignment">
-
           </div>
         </div>
         <div class="uk-modal-footer uk-text-right">
           <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
-          <button class="uk-button uk-button-primary" type="button">Save</button>
+          <button id="copy-multiple-sequence-alignment" class="uk-button uk-button-primary" type="button">Save</button>
         </div>
       </div>
     </div>
 
-    <!-- This is the end of the Compare Modal -->
+    <!-- This is the beginning of the Color Section-->
+    <div id="color-section">
+
+    </div>
+    <!-- This is the end of the Color Section-->
+
+    <!-- This is the beginning of the Application Container-->
     <div style="width: 95%; height: 95%">
       <svg id="application-container" width="100%" height="95%">
         <g id="application"></g>
       </svg>
     </div>
+    <!-- This is the end of the Application Container-->
 
     <script type="module">
       import Gui from "../static/js/gui.js";
@@ -61,40 +84,308 @@
       let applicationContainer = document.getElementById("application-container");
       let width = applicationContainer.clientWidth;
       let height = applicationContainer.clientHeight;
+      let leafColorMap = {}
+      let groupColorMap = {}
+      //================================================= Main =======================================================
 
       d3.json("../static/test/simulated_test.json")
         .then((data) => {
 
-          let tree = data;
-
           d3.select("#application").attr(
             'transform',
-            `translate(${width / 2},${height / 2})`
+            `translate(
+              ${width / 2},
+              ${height / 2}
+              )`
           );
 
-          tree = constructTree(
-            tree,
-            false,
-            'application-container',
-            {
-              'margin': width * 0.05,
-            }
-          );
+          let tree = constructTree(
+            data, false, 'application-container');
 
-          drawTree(tree, 0, [], "", 1, "application");
+          leafColorMap = initializeLeafColorMap(tree.leaves());
 
-          d3.select('#application-container').call(
-            d3.zoom()
-              .on("zoom", zoomed)
-          );
+          drawTree(tree, 'application', {
+            'drawDurationFrontEnd': 1,
+            'fontSize': 12,
+            'strokeWidth': 1,
+            'leaveColorMap': leafColorMap,
+          });
 
-          function zoomed({ transform }) {         
-            let xZoomedTransform = (width / 2) + (transform.x / 2);
-            let yZoomedTransform = (height /2) + (transform.y / 2);
-            d3.select('#application').attr("transform", `translate(${xZoomedTransform}, ${yZoomedTransform})` + "scale(" + transform.k + ")");
-          }
-  
+          ModalColorArray(tree);
+          setZoom();
+
+          // Extract 'values' from tree.data or default to an empty object if not defined.
+          let { values = {} } = tree.data;
+          let dataOptionsArray = Object.keys(values);
+
+          // Add 'length' to the options.
+          dataOptionsArray.push('length');
+
+          let branchValuesVector = document.getElementById("branch-values-vector");
+
+          // Create new li element.
+          let li = document.createElement("li");
+
+          // Create options for the select list.
+          let options = dataOptionsArray.map((dataOption) => `<option>${dataOption}</option>`).join('');
+
+          li.innerHTML = `<div class="uk-margin">
+                          <div class="uk-form-controls">
+                            <select id="selector-option-branch-value" class="uk-select" id="form-stacked-select">
+                            <option></option>
+                            ${options}
+                            </select>
+                      </div>
+                    </div>`;
+
+          // Append the newly created li to the vector.
+          branchValuesVector.appendChild(li);
+
+          // Add event listener.
+          document.getElementById('selector-option-branch-value').addEventListener('change', (e) => {
+
+            drawTree(tree, 'application', {
+              'leaveColorMap': leafColorMap,
+              'displayBranchValue': e.target.value,
+            });
+            
+          });
+
         });
+
+      //================================================= Functions =======================================================s
+      function getLeaveColor(leaves) {
+        let colorMap = {};
+        leaves.forEach((leave) => {
+          let name = leave.data.name;
+          let color = document.getElementById(`taxa-${name}`).value;
+          colorMap[name] = color;
+        });
+        return colorMap;
+      }
+
+      function getGroupColor() {
+        let colorMap = {};
+        document.querySelectorAll(".group-color").forEach((element) => {
+          colorMap[element.dataset.group] = element.value;
+        });
+        return colorMap;
+      }
+
+      function zoomed({ transform }) {
+        let xZoomedTransform = (width / 2) + (transform.x / 2);
+        let yZoomedTransform = (height / 2) + (transform.y / 2);
+        d3.select('#application').attr("transform", `translate(${xZoomedTransform}, ${yZoomedTransform})` + "scale(" + transform.k + ")");
+      }
+
+      function accessLeaveNames(leaves) {
+        return leaves.map((leave) => { return leave.data.name; });
+      }
+
+      function groupLeaves(leaves, separator) {
+        let groups = new Set();
+
+        if (separator == "first") {
+
+          leaves.forEach((leave) => {
+            groups.add(leave.data.name[0]);
+          });
+
+        } else {
+
+          leaves.forEach((leave) => {
+            let group = leave.data.name.split(separator);
+            groups.add(group[0]);
+          });
+
+        }
+
+        return groups;
+
+      }
+
+      function setZoom() {
+        d3.select('#application-container').call(
+          d3.zoom().on("zoom", zoomed)
+        );
+      }
+
+      function initializeLeafColorMap(leaves) {
+        let colorMap = {};
+        leaves.forEach((leave) => {
+          let name = leave.data.name;
+          colorMap[name] = "#FFFFFF";
+        });
+        return colorMap;
+      }
+
+      function convertGroupColorMapToLeaveColorMap(groupColorMap, leaves, separator) {
+        let colorMap = {};
+        if (separator == "first") {
+          leaves.forEach((leave) => {
+            let name = leave.data.name;
+            let color = groupColorMap[name[0]];
+            colorMap[name] = color;
+          });
+        } else {
+          leaves.forEach((leave) => {
+            let name = leave.data.name;
+            let group = name.split(separator);
+            let color = groupColorMap[group[0]];
+            colorMap[name] = color;
+          });
+        }
+        return colorMap;
+      }
+
+      //================================================= Components =======================================================
+      function SelectorColoringMode() {
+        return ` 
+        <div >
+          <select id="coloring-mode-selector" aria-label="Custom controls">
+            <option value="1">Taxa</option>
+            <option value="2">Groups</option>
+          </select>
+        </div>`
+      }
+
+      function ModalColorArray(root) {
+        let leaves = root.leaves();
+
+        document.getElementById("color-section").innerHTML = `
+        <div id="color-selection-modal" uk-modal container="color-section">
+          <div class="uk-modal-dialog uk-modal-body">
+              <div class="uk-child-width-1-3@s uk-grid-small uk-text-center" uk-grid>
+                ${SelectorColoringMode()}   
+                <div id="separator-selector-container" class="uk-tile uk-tile-default uk-padding-remove"></div>
+                <div id="group-button" class="uk-tile uk-tile-default uk-padding-remove"></div>
+            </div>
+
+            <div id="color-array-container" class="uk-child-width-1-3@s uk-grid-small uk-text-center" uk-grid>
+                ${TaxaColorArray(accessLeaveNames(leaves))}
+            </div>
+            
+            <div id="color-array-container" class="uk-child-width-1-3@s uk-grid-small uk-text-center" uk-grid>
+                ${ApplyColorButton()}  
+            </div>
+
+          </div>
+        </div>`;
+
+        document.getElementById("button-row").innerHTML = AssignColorButton();
+
+        document.getElementById("coloring-mode-selector").addEventListener("change", (event) => {
+
+          if (event.target.value == 1) {
+            document.getElementById("color-array-container").innerHTML = TaxaColorArray(accessLeaveNames(leaves));
+            document.getElementById("separator-selector-container").innerHTML = ``;
+            document.getElementById("group-button").innerHTML = ``;
+          }
+
+          if (event.target.value == 2) {
+
+            document.getElementById("separator-selector-container").innerHTML = SeparatorSelector();
+            document.getElementById("group-button").innerHTML = GroupBySeparatorSelectorButton();
+            document.getElementById("group-button").addEventListener("click", (e) => {
+              let separator = document.getElementById("separator-select-button").value;
+              let group = groupLeaves(leaves, separator);
+              document.getElementById("color-array-container").innerHTML = GroupColorArray(group);
+            });
+
+          }
+        },
+          false
+        );
+
+        document.getElementById("apply-color-button").addEventListener("click", (e) => {
+
+          if (document.getElementById("coloring-mode-selector").value == 1) {
+            leafColorMap = getLeaveColor(leaves);
+          } else {
+            groupColorMap = getGroupColor();
+            leafColorMap = convertGroupColorMapToLeaveColorMap(groupColorMap, leaves, document.getElementById('separator-select-button').value);
+          }
+
+          drawTree(root,
+            'application',
+            {
+              'drawDurationFrontEnd': 1,
+              'fontSize': 12,
+              'strokeWidth': 1,
+              'leaveColorMap': leafColorMap,
+            });
+
+        });
+
+      }
+
+      function AssignColorButton() {
+        return `<a id="color-group-action" href="#" uk-toggle="target: #color-selection-modal">
+                  <span class="uk-margin-small-right" uk-icon="icon: paint-bucket"></span> Assign Colors
+                </a>`;
+      }
+
+      function ApplyColorButton() {
+        return `<div id="apply-color-button" class="uk-button uk-button-default">
+                  Apply  
+                </div>`
+      }
+
+      function GroupBySeparatorSelectorButton() {
+        return `<div class="form-group row py-2">
+                  <div class="col p-0">
+                      <a href="#" id="group-button" class="uk-button uk-button-default">
+                          Group
+                      </a>
+                  </div>
+                </div>`
+      }
+
+      function SeparatorSelector() {
+        return `<div class='button-container'">
+                        <select id="separator-select-button" aria-label="Custom controls" name="separator">
+                            <option value="-">-</option>
+                            <option value="_">Underscore</option>
+                            <option value="first">First Letter</option>
+                        </select>
+                    </div>
+                `
+      }
+
+      function GroupColorArray(elements) {
+        let elementContainer = "";
+        elements.forEach((element) => {
+          elementContainer += `
+                <div class="uk-tile uk-tile-default uk-padding-remove">
+                    <div>
+                        ${element}
+                    </div>
+                    <div>
+                        <input id="group-${element}" type="color" name="group-color-${element}" value="#FFFFFF" class="group-color" data-group="${element}">
+                    </div>
+                </div>
+                    `;
+        });
+        return elementContainer;
+      }
+
+      function TaxaColorArray(elements) {
+        let elementContainer = "";
+        elements.forEach((element) => {
+          elementContainer += `
+                <div class="uk-tile uk-tile-default uk-padding-remove">
+                    <div>
+                        ${element}
+                    </div>
+                    <div>
+                        <input id="taxa-${element}" type="color" name="taxa-color-${element}" value="#000000">
+                    </div>
+                </div>
+                    `;
+        });
+        return elementContainer;
+      }
+
     </script>
 </body>
 

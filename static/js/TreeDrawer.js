@@ -3,6 +3,7 @@ import * as d3 from "https://cdn.skypack.dev/d3@7";
 
 /** Class For drawing Hierarchical Trees. */
 export class TreeDrawer {
+
   static colorMap = {
     defaultColor: "white",
     markedColor: "red",
@@ -29,10 +30,10 @@ export class TreeDrawer {
     this.leaveOrder = [];
     this._drawDuration = 1000;
     this._treeSpaceId = "";
+    this._currentMaxRadius = 0;
   }
 
-  //marked labels list
-  static markedLabelList = [];
+  static treeColorMap = {};
 
   static parser = new ParseUtil();
 
@@ -42,80 +43,6 @@ export class TreeDrawer {
    */
   getSvgContainer() {
     return d3.select(`#${this._treeSpaceId}`);
-  }
-
-  /**
-   *
-   * @return {void}
-   */
-  getArcInterpolationFunction() {
-    const self = this;
-
-    return function (d) {
-      // previous svg instance
-      let prev_d = d3.select(this).attr("d");
-
-      // parse SVG to current positions/angles
-      let pathArray = TreeDrawer.parser.parsePathData(prev_d);
-      return function (t) {
-        return self.buildSvgStringTime(d, t, pathArray);
-      };
-    };
-  }
-
-  /**
-   *
-   * @return {function(*): function(*): *}
-   */
-  getLinkExtensionInterpolator(currentMaxRadius) {
-    let self = this;
-
-    return function (d) {
-      // previous svg instance
-      // parse SVG to current positions/angles
-      let pathArray = TreeDrawer.parser.parsePathData(
-        d3.select(this).attr("d")
-      );
-
-      return function (t) {
-        return self.buildLinkExtensionTime(d, t, pathArray, currentMaxRadius);
-      };
-    };
-  }
-
-  attr2TweenCircleX(currentMaxRadius) {
-    return function (d) {
-      let cx = d3.select(this).attr("cx");
-      let cy = d3.select(this).attr("cy");
-
-      let polarCoordinates = TreeMathUtils.kar2pol(cx, cy);
-      const newAngle = d.angle;
-      const oldAngle = polarCoordinates.angle;
-      const diff = TreeMathUtils.shortestAngle(oldAngle, newAngle);
-
-      return function (t) {
-        const tweenAngle = diff * t + oldAngle;
-        return (currentMaxRadius - 30) * Math.cos(tweenAngle);
-      };
-    };
-  }
-
-  attr2TweenCircleY(currentMaxRadius) {
-    return function (d) {
-      let cx = d3.select(this).attr("cx");
-      let cy = d3.select(this).attr("cy");
-
-      let polarCoordinates = TreeMathUtils.kar2pol(cx, cy);
-
-      let newAngle = d.angle;
-      let oldAngle = polarCoordinates.angle;
-      let diff = TreeMathUtils.shortestAngle(oldAngle, newAngle);
-
-      return function (t) {
-        const tween_startAngle = diff * t + oldAngle;
-        return (currentMaxRadius - 30) * Math.sin(tween_startAngle);
-      };
-    };
   }
 
   /**
@@ -169,6 +96,7 @@ export class TreeDrawer {
       .style("stroke", 'rgb(55, 68, 105)')
       .attr("class", "links")
       .attr("stroke-width", TreeDrawer.sizeMap.strokeWidth)
+      .attr("z-index", "-1")
       .attr("fill", "none")
       .attr("id", (d) => {
         return this.getLinkId(d);
@@ -191,21 +119,19 @@ export class TreeDrawer {
       .style("stroke", 'blue')
       .transition()
       .ease(d3.easeExpInOut)
-      .duration(this.drawDuration)
-      .attrTween("d", this.getArcInterpolationFunction());
+      .duration(this.drawDuration);
+
   }
 
   /**
    * This function is drawing the extension of the branches in the trees.
    * @return {void}
    */
-  updateExternalEdges(currentMaxRadius) {
+  updateExternalEdges() {
     // JOIN new data with old elements.
     const colorExternalEdges = this.getSvgContainer()
       .selectAll(".link-extension") //updates the links
-      .data(this.root.leaves(), (link) => {
-        return link.data.name;
-      });
+      .data(this.root.leaves(), (link) => link.data.name);
 
     // UPDATE old elements present in new data.
     colorExternalEdges
@@ -213,7 +139,7 @@ export class TreeDrawer {
       .attr("stroke-width", TreeDrawer.sizeMap.strokeWidth)
       .ease(d3.easeExpInOut)
       .duration(this.drawDuration)
-      .attrTween("d", this.getLinkExtensionInterpolator(currentMaxRadius - 40));
+
 
     // ENTER new elements present in new data.
     colorExternalEdges
@@ -226,107 +152,103 @@ export class TreeDrawer {
         return 5 + ",5";
       })
       .attr("fill", "none")
-      .attr("d", (d) => {
-        return this.buildSvgLinkExtension(d, currentMaxRadius - 40);
-      });
+      .attr("d", (d) => this.buildEdgeExtension(d, this.currentMaxRadius));
+  }
+
+  /**
+   * Calculate font size based on number of leaves and current maximum radius
+   * @return {number}
+   */
+  calculateFontSize(divider = 4) {
+    let fontSize = (Math.sin(2 * Math.PI / this.root.leaves().length) * this.currentMaxRadius);
+    return fontSize / divider;
   }
 
   /**
    * Creates leave labels and update the position and the color of them.
-   * @param  {Number} currentMaxRadius
    * @return {void}
    */
-  updateLabels(currentMaxRadius) {
-    const nodes = this.root.leaves();
+  updateLeaveLabels() {
+    let leaves = this.root.leaves();
 
     // JOIN new data with old svg elements
-    const textLabels = this.getSvgContainer()
-      .selectAll(".label")
-      .data(nodes, (d) => {
-        return d.data.name;
-      });
+    let textLabels = this.getSvgContainer()
+      .selectAll(".leave-label")
+      .data(leaves, (d) => d.data.name);
 
-    let fontSize = (Math.sin(2 * Math.PI / this.root.leaves().length) * currentMaxRadius)
-    fontSize = fontSize / 2
+    let fontSize = this.calculateFontSize(4);
 
     // UPDATE old elements present in new data
     textLabels
-      .transition()
-      .ease(d3.easeExpInOut)
-      .duration(this.drawDuration)
-      .attrTween("transform", this.getOrientTextInterpolator(currentMaxRadius))
+      .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("text-anchor", (d) => this.anchorCalc(d))
-      .style("font-size", `${fontSize}px`);
+      .style("font-size", `${fontSize}px`)
+      .style("fill", (d) => this.lookUpLeafColor(d.data.name));;
+
 
     // ENTER new elements present in new data
     textLabels
       .enter()
       .append("text")
-      .attr("class", "label")
-      .attr("id", (d) => {
-        return `label-${d.data.name}`;
-      })
+      .attr("class", "leave-label")
+      .attr("id", (d) => `leave-label-${d.data.name}`)
       .attr("dy", ".31em")
       .style("font-size", `${fontSize}px`)
-      .text((d) => {
-        return `${d.data.name}`;
-      })
-      .attr("transform", (d) => this.orientText(d, currentMaxRadius - 25))
+      .text((d) => `${d.data.name}`)
+      .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("text-anchor", (d) => this.anchorCalc(d))
       .attr("font-family", "Courier New")
-      .style("fill", TreeDrawer.colorMap.defaultLabelColor);
+      .style("fill", (d) => this.lookUpLeafColor(d.data.name));
   }
 
 
-  joinBranchValues(currentMaxRadius) {
-
+  updateBranchValues(value) {
     // Get all nodes from the hierarchy
-    const allNodes = this.root.descendants();
-    console.log(allNodes);
-    // Filter nodes that have the "value" property
-    const nodesWithValue = allNodes.filter(node => node.data.values);
-    // Access the nodes with "value" property
-    console.log(nodesWithValue);
+    const edges = this.root.links();
 
     // JOIN new data with old svg elements
     const textLabels = this.getSvgContainer()
-      .selectAll(".branch-value")
-      .data(nodesWithValue, (d) => {
-        console.log(`boot-${d.data.name}`)
-        return `boot-${d.data.name}`;
-      });
+      .selectAll(".edge-value")
+      .data(edges,
+        (d) => `branch-value-${d.source.data.name}`
+      );
 
-    let fontSize = (Math.sin(2 * Math.PI / this.root.leaves().length) * currentMaxRadius)
-    fontSize = fontSize / 4
+    textLabels.exit().remove();
+
+    let fontSize = this.calculateFontSize(8);
 
     // UPDATE old elements present in new data
     textLabels
-      .transition()
-      .ease(d3.easeExpInOut)
-      .duration(this.drawDuration)
-      .attrTween("transform", this.getOrientTextInterpolator(currentMaxRadius))
+      .attr("transform", (d) => this.orientText(d.target, (d.source.radius + d.target.radius) / 2))
       .attr("text-anchor", (d) => this.anchorCalc(d))
+      .text((d) => this.getBranchValue(value, d))
       .style("font-size", `${fontSize}px`);
 
     // ENTER new elements present in new data
     textLabels
       .enter()
       .append("text")
-      .attr("class", "label")
-      .attr("id", (d) => {
-        return `label-${d.data.name}`;
-      })
-      .attr("dy", ".33em")
+      .attr("class", "edge-value")
+      .attr("dy", "-1em")
       .style("font-size", `${fontSize}px`)
-      .text((d) => {
-
-        return `${d.data.values.boot}`;
-
-      })
-      .attr("transform", (d) => this.orientText(d, d.radius - 25))
-      .attr("text-anchor", (d) => this.anchorCalc(d))
-      .attr("font-family", "Courier New")
+      .text((d) => this.getBranchValue(value, d))
+      .attr("transform", (d) => this.orientText(d.target, (d.source.radius + d.target.radius) / 2))
+      .attr("text-anchor", (d) => this.anchorCalc(d.target))
+      //.attr("font-family", "Courier New")
       .style("fill", TreeDrawer.colorMap.defaultLabelColor);
+
+
+  }
+
+  getBranchValue(value, d) {
+    if (value == "length") {
+      return d.source.data.length;
+    }
+    else {
+      if (d.target.data.values) {
+        return d.source.data.values[value];
+      }
+    }
 
   }
 
@@ -336,44 +258,35 @@ export class TreeDrawer {
    * @param  {Number} currentMaxRadius
    * @return {void}
    */
-  updateNodeCircles(currentMaxRadius) {
+  updateNodeCircles() {
     const nodes = this.root;
 
     //getting leave names for creating legend
     // JOIN new data with old svg elements
     const nodeCircles = this.getSvgContainer()
       .selectAll(".node")
-      .data(nodes, (d) => {
-        return d.data.name;
-      });
+      .data(nodes, (d) => d.data.name);
+
     // UPDATE old elements present in new data
     nodeCircles
-      .transition()
-      .ease(d3.easeExpInOut)
-      .duration(this.drawDuration)
-      .attrTween("cx", this.attr2TweenCircleX(currentMaxRadius))
-      .attrTween("cy", this.attr2TweenCircleY(currentMaxRadius));
+      .attr("cx", (d) => (d.x)) // * Math.cos(d.angle)) 
+      .attr("cy", (d) => (d.y)) // * Math.cos(d.angle)) 
 
+    let circleNodeRadius = (Math.sin(2 * Math.PI / this.root.leaves().length) * this.currentMaxRadius)
+    circleNodeRadius = circleNodeRadius / (this.root.leaves().length / 2);
 
     // ENTER new elements present in new data
     nodeCircles
       .enter()
       .append("circle")
-      .attr("id", (d) => {
-        return `${this._treeSpaceId}!${d.data.name}`;
-      })
+      .attr("id", (d) => `${this._treeSpaceId}!${d.data.name}`)
       .attr("class", "node")
-      .attr("cx", (d) => {
-        return (d.x); //* Math.cos(d.angle);
-      })
-      .attr("cy", (d) => {
-        return (d.y) //* Math.sin(d.angle);
-      })
+      .attr("z-index", "1000")
+      .attr("cx", (d) => (d.x)) // * Math.cos(d.angle)) 
+      .attr("cy", (d) => (d.y)) // * Math.sin(d.angle)) 
       .style("fill", 'rgb(3, 192, 220')
-      .attr("r", `0.2rem`)
+      .attr("r", `${circleNodeRadius}px`)
       .on("click", (event) => {
-
-        UIkit.modal('#modal-sections').toggle(); //you can use toggle or open here
 
         d3.json('../../static/test/simulated_test_mlt.json').then((msa) => {
           let node_taxon_list = event.target.id.split("!");
@@ -392,6 +305,8 @@ export class TreeDrawer {
             </div>
             `;
           });
+
+          UIkit.modal('#modal-sections').toggle(); //you can use toggle or open here
 
         });
 
@@ -513,55 +428,6 @@ export class TreeDrawer {
     return `M ${mx}, ${my} A${rx}, ${ry} ${xAxisRotation} ${largeArcFlag} ${sweepFlag} ${curveX}, ${curveY} L ${lx}, ${ly}`;
   }
 
-  /**
-   * Generating the path for the Branch Extension.
-   * @param  {Object} d
-   * @param  {Number} t
-   * @param  {Object} pathArray
-   * @param  {Number} currentMaxRadius
-   * @return {void}
-   */
-  buildLinkExtensionTime(d, t, pathArray, currentMaxRadius) {
-    let old_startRadius = 0;
-    let old_startAngle = 0;
-    let old_endRadius = 0;
-    let old_endAngle = 0;
-
-    if (!!pathArray) {
-      let old_start = TreeMathUtils.kar2pol(pathArray[0].x, pathArray[0].y);
-      old_startRadius = old_start.r;
-      old_startAngle = old_start.angle;
-      let last = pathArray[pathArray.length - 1];
-      let old_end = TreeMathUtils.kar2pol(last.x, last.y);
-      old_endRadius = old_end.r;
-      old_endAngle = old_end.angle;
-    }
-
-    let new_startAngle = d.angle;
-    let new_endAngle = d.angle;
-
-    let new_startRadius = d.radius;
-    let new_endRadius = currentMaxRadius;
-
-    let startDiff = TreeMathUtils.shortestAngle(old_startAngle, new_startAngle);
-    let endDiff = TreeMathUtils.shortestAngle(old_endAngle, new_endAngle);
-
-    let tween_startAngle = startDiff * t + old_startAngle;
-    let tween_endAngle = endDiff * t + old_endAngle;
-    let tween_startRadius =
-      (new_startRadius - old_startRadius) * t + old_startRadius;
-    let tween_endRadius = (new_endRadius - old_endRadius) * t + old_endRadius;
-
-    // coordinates before the arc
-    let mx = tween_startRadius * Math.cos(tween_startAngle);
-    let my = tween_startRadius * Math.sin(tween_startAngle);
-
-    // coordinates after the straight line
-    let lx = tween_endRadius * Math.cos(tween_endAngle);
-    let ly = tween_endRadius * Math.sin(tween_endAngle);
-
-    return `M ${mx}, ${my} L ${lx}, ${ly}`;
-  }
 
   /**
    * Generating the path for the Branch Extension.
@@ -569,14 +435,14 @@ export class TreeDrawer {
    * @param  {Number} currentMaxRadius
    * @return {string}
    */
-  buildSvgLinkExtension(d, currentMaxRadius) {
+  buildEdgeExtension(d, currentMaxRadius) {
     const mx = d.x;
     const my = d.y;
 
-    const lxmax = currentMaxRadius * Math.cos(d.angle);
-    const lymax = currentMaxRadius * Math.sin(d.angle);
+    const lxMax = currentMaxRadius * Math.cos(d.angle);
+    const lyMax = currentMaxRadius * Math.sin(d.angle);
 
-    return `M ${mx}, ${my} L ${lxmax}, ${lymax}`;
+    return `M ${mx}, ${my} L ${lxMax}, ${lyMax}`;
   }
 
   /**
@@ -587,84 +453,23 @@ export class TreeDrawer {
    */
   orientText(d, currentMaxRadius) {
     const angle = (d.angle * 180) / Math.PI;
+
     return `rotate(${angle}) translate(${currentMaxRadius}, 0) rotate(${angle < 270 && angle > 90 ? 180 : 0
       })`;
   }
 
-  getOrientTextInterpolator(currentMaxRadius) {
-    return function (d, i) {
-      // previous svg instance
-      let prev_d = d3.select(this).attr("transform");
-
-      let re =
-        /rotate\((?<angle>.+)\) translate\((?<oldMaxRadius>.+), 0\) rotate\((?<otherangle>.+)\)/;
-
-      let match = re.exec(prev_d);
-
-      let old_angle = parseFloat(match.groups.angle);
-      let old_otherAngle = parseFloat(match.groups.otherangle);
-
-      let old_MaxRadius = parseFloat(match.groups.oldMaxRadius);
-
-      const new_angle = (d.angle * 180) / Math.PI;
-
-      const new_otherAngle = new_angle < 270 && new_angle > 90 ? 180 : 0;
-
-      const angleDiff =
-        (360 *
-          TreeMathUtils.shortestAngle(
-            (Math.PI * 2 * old_angle) / 360,
-            (Math.PI * 2 * new_angle) / 360
-          )) /
-        (2 * Math.PI);
-
-      const otherAngleDiff = TreeMathUtils.shortestAngle(
-        old_otherAngle,
-        new_otherAngle
-      );
-
-      const radiusDiff = currentMaxRadius - old_MaxRadius;
-
-      return function (t) {
-        const tweenAngle = angleDiff * t + old_angle;
-        const tweenRadius = radiusDiff * t + old_MaxRadius;
-        const tweenOtherAngle = otherAngleDiff * t + old_otherAngle;
-
-        if (angleDiff > 2 || angleDiff < -2) {
-          return `rotate(${tweenAngle}) translate(${tweenRadius}, 0) rotate(${tweenOtherAngle})`;
-        } else {
-          return `rotate(${tweenAngle}) translate(${tweenRadius}, 0) rotate(${tweenOtherAngle})`;
-        }
-      };
-    };
-  }
 
   anchorCalc(d) {
     const angle = (d.angle * 180) / Math.PI;
     return angle < 270 && angle > 90 ? "end" : "start";
   }
 
-  calculateHighlightingTaxa(ancestor) {
-    const linkId = this.generateLinkIdForLeave(ancestor);
-
-    if (!linkId) {
-      return;
-    }
-
-    const svgElement = d3.select(linkId);
-    let neededHighlightingTaxa = svgElement.attr("neededHighlightingTaxa");
-
-    if (neededHighlightingTaxa == null) {
-      neededHighlightingTaxa = 0;
+  lookUpLeafColor(leaveName) {
+    if (leaveName in TreeDrawer.leaveColorMap) {
+      return TreeDrawer.leaveColorMap[leaveName];
     } else {
-      neededHighlightingTaxa = parseInt(neededHighlightingTaxa);
+      return TreeDrawer.colorMap.defaultLabelColor;
     }
-
-    if (TreeDrawer.markedLabelList.includes(d.data.name)) {
-      neededHighlightingTaxa += 1;
-    }
-
-    svgElement.attr("neededHighlightingTaxa", neededHighlightingTaxa);
   }
 
   /**
@@ -682,6 +487,25 @@ export class TreeDrawer {
    */
   get drawDuration() {
     return this._drawDuration;
+  }
+
+  // Getter and Setter for currentMaxRadius
+  get currentMaxRadius() {
+    return this._currentMaxRadius;
+  }
+
+  set currentMaxRadius(value) {
+    this._currentMaxRadius = value;
+  }
+
+
+  // Getter and Setter for leaveColorMap
+  get leaveColorMap() {
+    return this._leaveColorMap;
+  }
+
+  set leaveColorMap(value) {
+    this._leaveColorMap = value;
   }
 
 }
@@ -752,30 +576,59 @@ export class TreeMathUtils {
 
 }
 
+/**
+ * Function to draw a tree using the provided parameters.
+ *
+ * @param {object} tree - The object containing the tree data and maximum radius for the tree visualization. It includes 'maxRadius' which denotes the maximum radius of the tree.
+ * @param {string} treeSpaceId - The ID of the DOM element where the tree is to be drawn.
+ * @param {object} options - An object containing optional parameters:
+ *    fontSize: The font size for the tree visualization.
+ *    strokeWidth: The stroke width for the tree visualization.
+ *    drawDurationFrontend: The duration for the frontend draw.
+ *    leaveOrder: Determines the order of leaves.
+ *    leaveColorMap: Determines the color mapping of leaves.
+ * @returns {void}
+ */
 export default function drawTree(
-  treeConstructor,
-  drawDurationFrontend,
-  leaveOrder,
-  fontSize,
-  strokeWidth,
+  tree,
   treeSpaceId,
+  options,
 ) {
-  let currentRoot = treeConstructor["tree"];
-  let currentMaxRadius = treeConstructor["max_radius"] + 30;
+  // Extract the root and maximum radius from the tree
+  let currentRoot = tree;
+  let currentMaxRadius = tree.maxRadius;
 
+  // Initialize a new TreeDrawer with the current root
   let currentTreeDrawer = new TreeDrawer(currentRoot);
 
-  TreeDrawer.sizeMap.fontSize = `${fontSize}em`;
-  TreeDrawer.sizeMap.strokeWidth = strokeWidth;
-
-  currentTreeDrawer.drawDuration = drawDurationFrontend;
-  currentTreeDrawer.leaveOrder = leaveOrder;
+  // Assign the treeSpaceId and currentMaxRadius to the TreeDrawer
   currentTreeDrawer._treeSpaceId = treeSpaceId;
+  currentTreeDrawer.currentMaxRadius = currentMaxRadius;
 
+  // Update optional TreeDrawer parameters if they are provided
+  if ("fontSize" in options) {
+    TreeDrawer.fontSize = options.fontSize;
+  }
+  if ('strokeWidth' in options) {
+    TreeDrawer.sizeMap.strokeWidth = options.strokeWidth;
+  }
+  if ('drawDurationFrontend' in options) {
+    currentTreeDrawer.drawDuration = options.drawDurationFrontend;
+  }
+  if ('leaveOrder' in options) {
+    currentTreeDrawer.leaveOrder = options.leaveOrder;
+  }
+  if ('leaveColorMap' in options) {
+    TreeDrawer.leaveColorMap = options.leaveColorMap;
+  }
+
+  // Execute tree drawing methods on the currentTreeDrawer
   currentTreeDrawer.updateEdges();
-  currentTreeDrawer.updateExternalEdges(currentMaxRadius);
-  currentTreeDrawer.updateLabels(currentMaxRadius);
-  currentTreeDrawer.updateNodeCircles(currentMaxRadius);
-  currentTreeDrawer.joinBranchValues(currentMaxRadius);
+  currentTreeDrawer.updateExternalEdges();
+  currentTreeDrawer.updateLeaveLabels();
+  currentTreeDrawer.updateNodeCircles();
 
+  if ('displayBranchValue' in options) {
+    currentTreeDrawer.updateBranchValues(options.displayBranchValue);
+  }
 }

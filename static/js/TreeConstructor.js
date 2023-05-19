@@ -201,35 +201,59 @@ export class TreeConstructor {
   }
 }
 
-export default function constructTree(tree, ignore_branch_lengths, container, options = {}) {
+/**
+ * Constructs a radial tree by using a TreeConstructor instance. This function handles tree creation and layout settings.
+ *
+ * @param {Object} tree - The tree data to visualize, structured as a d3.hierarchy object.
+ * @param {boolean} ignoreBranchLengths - Whether to ignore the lengths of branches when constructing the tree.
+ * @param {string} container - The ID of the HTML container where the tree will be visualized.
+ * @param {Object} options - An object containing optional parameters to define the size and margin of the tree.
+ *    width: Width of the container. If not provided, it will be determined by the clientWidth of the container.
+ *    height: Height of the container. If not provided, it will be determined by the clientHeight of the container.
+ *    margin: Margin of the container. If not provided, it will be determined by the smaller dimension (width or height) of the container.
+ * @returns {Object} The constructed tree.
+ */
+export default function constructTree(tree, ignoreBranchLengths, container, options = {}) {
 
-  let treeConstructor = new TreeConstructor(d3.hierarchy(tree), ignore_branch_lengths);
+  // Creates a TreeConstructor instance with the given tree and branch length setting
+  let treeConstructor = new TreeConstructor(d3.hierarchy(tree), ignoreBranchLengths);
 
-  //  "for the main application we use the "application-container" 
+  // Retrieve the HTML container for tree visualization using its ID
   let applicationContainer = document.getElementById(container);
+  if (!applicationContainer) {
+    // If the container is not found, throw an error
+    throw new Error(`No element found with id ${container}`);
+  }
 
+  // Get the width of the container. If 'width' is specified in options, use it instead
   let width = applicationContainer.clientWidth;
-  if('width' in options){
+  if ('width' in options) {
     width = options['width'];
   }
 
+  // Get the height of the container. If 'height' is specified in options, use it instead
   let height = applicationContainer.clientHeight;
-  if('height' in options){
+  if ('height' in options) {
     height = options['height'];
   }
 
-  let margin = width < height ? width * 0.20 : height * 0.20;  
-  if('margin' in options){
+  // Calculate the margin for the container. It is 20% of the smaller dimension of the container
+  // If 'margin' is specified in options, use it instead
+  let margin = width < height ? width * 0.20 : height * 0.20;
+  if ('margin' in options) {
     margin = options['margin'];
   }
-  
+
+  // Set the dimensions and margins for the TreeConstructor instance
   treeConstructor.setDimension(width, height);
   treeConstructor.setMargin(margin);
 
+  // Construct the radial tree using the TreeConstructor instance
   let root_ = treeConstructor.constructRadialTree();
 
-  return {
-    tree: root_,
-    max_radius: treeConstructor.getMaxRadius(root_),
-  };
+  // Get the maximum radius from the constructed tree and assign it to the root node
+  root_.maxRadius = treeConstructor.getMaxRadius(root_);
+
+  // Return the root node of the constructed tree
+  return root_
 }
