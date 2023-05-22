@@ -2,15 +2,7 @@
 export default class Gui {
   constructor(
     treeList,
-    weightedRobinsonFouldsDistances,
-    robinsonFouldsDistances,
-    windowSize,
-    windowStepSize,
-    hightLightTaxaMap,
-    leaveOrder,
-    colorInternalBranches,
     fileName,
-    taxaColorMap
   ) {
     this.treeList = treeList;
     this.treeNameList = [
@@ -45,35 +37,63 @@ export default class Gui {
   }
 
 
+  saveSVG() {
+
+    let containerWidth = document.getElementById("application").getBBox().width;
+
+    let containerHeight = document
+      .getElementById("application")
+      .getBBox().height;
+
+    containerWidth += containerWidth * 0.05;
+    containerHeight += containerHeight * 0.05;
+
+    const svg = document
+      .getElementById("application-container")
+      .cloneNode(true); // clone your original svg
+
+    svg.setAttribute("id", "imageExport");
+
+    document.body.appendChild(svg); // append element to document
+
+    const g = svg.querySelector("g"); // select the parent g
+
+    g.setAttribute(
+      "transform",
+      `translate(${containerWidth / 2},${containerHeight / 2})`
+    ); // clean transform
+
+    svg.setAttribute("width", containerWidth); // set svg to be the g dimensions
+
+    svg.setAttribute("height", containerHeight);
+
+    const svgAsXML = new XMLSerializer().serializeToString(svg);
+    const svgData = `data:image/svg+xml,${encodeURIComponent(svgAsXML)}`;
+
+    const link = document.createElement("a");
+
+    document.body.appendChild(link);
+
+    link.setAttribute("href", svgData);
+
+    link.setAttribute(
+      "download", `tree-1.svg`
+    );
+
+    link.click();
+
+    document.getElementById("imageExport").remove();
+  }
+
 
 
   updateMain() {
     let tree = this.treeList[this.index];
 
     let d3tree = constructTree(
-        tree, 
-        this.ignoreBranchLengths, 
-        'application-container'
-      );
-
-    if (this.index === 0) {
-      this.colorIndex = 0;
-    } else {
-      if (this.index % 5 === 0 && this.firstFull === 0) {
-        this.colorIndex = Math.floor(this.index / 5) - 1;
-      } else {
-        this.colorIndex = Math.floor(this.index / 5);
-      }
-    }
-
-    drawTree(
-      d3tree,
-      this.hightLightTaxaMap[this.colorIndex],
-      this.leaveOrder,
-      this.fontSize,
-      this.strokeWidth,
-      "application",
-      this.taxaColorMap
+      tree,
+      this.ignoreBranchLengths,
+      'application-container'
     );
 
   }
@@ -86,5 +106,5 @@ export default class Gui {
       "transform",
       "translate(" + width / 2 + "," + height / 2 + ")"
     );
-  } 
+  }
 }

@@ -125,6 +125,7 @@ import re
 from Bio import AlignIO
 from ete3 import Tree
 import json
+import subprocess
 
 
 def generate_tree(n):
@@ -159,12 +160,26 @@ def write_msa_to_json_format(file_name):
     for record in alignment:
         print(record.seq + " " + record.id)
         multiple_sequence_alignment_dictionary[str(record.id)] = str(record.seq)
-    with open("./static/test/simulated_test_mlt.json", "w") as f:
+    with open("./static/test/random_generated_tree_msa.json", "w") as f:
         f.write(json.dumps(multiple_sequence_alignment_dictionary, indent=4))
+
+def transform_tree_to_json_format(file_name):
+    with open(file_name, "r") as f:
+        pair_bracket_string = f.read()
+    write_pair_bracket_string_to_json(pair_bracket_string, "./static/test/simulated_test.json")
+
+def generate_tree_and_and_msa(n):
+    t = generate_tree(n)
+    file_name_tree = "random_generated_tree.tree"
+    file_name_json = "./static/test/random_generated_tree.json"
+    file_name_phy = "random_generated_tree_msa.phy"
+    file_name_msa_json = "random_generated_tree_msa.json"
+
+    write_pair_bracket_string_to_json(t.write(), file_name_json)
+    subprocess.call(f'./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {file_name_phy}', shell=True)
+    write_msa_to_json_format(file_name_phy)
+
 
 
 if __name__ == "__main__":
-    f = open("random_tree_with_boots.tree", "r")
-    pair_bracket_string = f.read()
-    newick_json = pair_to_json_encoded(pair_bracket_string)
-    write_pair_bracket_string_to_json(pair_bracket_string, "./static/test/simulated_test.json")
+    generate_tree_and_and_msa(100)

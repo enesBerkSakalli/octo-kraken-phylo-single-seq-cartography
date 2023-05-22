@@ -23,7 +23,7 @@
 .id {
     text-align: left;
     margin-right: 10px;
-    min-width: 150px;
+    min-width: 0.5px;
 }
 
 .letters {
@@ -36,26 +36,6 @@
     width: 1em;
 }
 
-span[data-letter="A"] {
-    color: red;
-  }
-
-.letters span[data-letter="A"] {
-    color: red;
-}
-
-.letters span[data-letter="C"] {
-    color: blue;
-}
-
-.letters span[data-letter="G"] {
-    color: green;
-}
-
-.letters span[data-letter="T"] {
-    color: purple;
-}
-
 html,
 body {
     height: 100%;
@@ -64,7 +44,6 @@ body {
     background-color: rgb(39, 43, 77);
     /*overflow: hidden;*/
 }
-
 
 .treeNavigation {
     font-size: 0.80em;
