@@ -41,7 +41,7 @@ body {
     height: 100%;
     width: 100%;
     font-family: Heebo, sans-serif;
-    background-color: rgb(39, 43, 77);
+    background-color: white;
     /*overflow: hidden;*/
 }
 
@@ -58,9 +58,6 @@ body {
     padding-inline: 20px;
 }
 
-.fa-film {
-    color: #ffff;
-}
 
 .menu-header {
     padding-top: 5%;

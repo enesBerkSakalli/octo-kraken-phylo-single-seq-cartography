@@ -3,17 +3,17 @@
 export default class TreeDisplay {
 
   static colorMap = {
-    defaultColor: "white",
+    defaultColor: "black",
     markedColor: "red",
-    strokeColor: "white",
+    strokeColor: "black",
     changingColor: "orange",
-    defaultLabelColor: "white",
-    extensionLinkColor: "rgb(55, 68, 105)",
+    defaultLabelColor: "black",
+    extensionLinkColor: "black",
     userMarkedColor: "magenta",
   };
 
   static sizeMap = {
-    strokeWidth: "0.2px",
+    strokeWidth: "0.5px",
     fontSize: "1em",
   };
 
@@ -47,12 +47,8 @@ export default class TreeDisplay {
    * @param  {Object} link
    * @return {string}
    */
-  getLinkId(link) {
-    if (typeof link.target.data.name === "string") {
-      return `link-${this.container}-${link.target.data.name}`;
-    } else {
-      return `link-${this.container}-${link.target.data.name.join("-")}`;
-    }
+  generateEdgeId(link) {
+    return `link-${this.container}-${link.source.data.name.join("-")}`;
   }
 
   /**
@@ -63,23 +59,28 @@ export default class TreeDisplay {
   updateEdges() {
     // JOIN new data with old SVG elements.
     // Data Binding
+
     let edges = this.getSvgContainer()
-      .selectAll(".links")
-      .data(this.root.links(), (d) => { this.getLinkId(d) });
+      .selectAll(".edge")
+      .data(this.root.links(), (d) => this.getLinkId);
 
     // EXIT old elements not present in new data.
-    edges.exit().remove();
+    edges
+      .exit()
+      .transition()
+      .style("stroke-opacity", 0)
+      .remove();
 
     // ENTER new elements present in new data.
     edges
       .enter()
       .append("path")
       .style("stroke", TreeDisplay.colorMap.strokeColor)
-      .attr("class", "links")
+      .attr("class", "edge")
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("z-index", "-1")
       .attr("fill", "none")
-      .attr("id", (d) => this.getLinkId(d))
+      .attr("id", (d) => this.generateEdgeId(d))
       .attr("data-source", (d) => d.source.data.name)
       .attr("data-target", (d) => d.target.data.name)
       .attr("d", (d) => this.buildSvgString(d))
@@ -139,20 +140,21 @@ export default class TreeDisplay {
    * @return {void}
    */
   updateLeaveLabels() {
-    let leaves = this.root.leaves();
-
+    let leaves = this.root.leaves()//
+    
+    leaves = leaves.filter((leaf)=> !leaf.collapsed);
+    
     // JOIN new data with old svg elements
     let textLabels = this.getSvgContainer()
       .selectAll(".leave-label")
       .data(leaves, (d) => d.data.name);
-
 
     // UPDATE old elements present in new data
     textLabels
       .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("text-anchor", (d) => this.anchorCalc(d))
       .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
-      .style("fill", (d) => this.lookUpLeafColor(d.data.name));;
+      .style("fill", (d) => this.lookUpLeafColor(d.data.name));
 
     textLabels.exit().remove();
 
@@ -165,7 +167,7 @@ export default class TreeDisplay {
       .attr("dy", ".31em")
       .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
       .text((d) => `${d.data.name}`)
-      .attr("transform", (d) => this.orientText(d, this.currentMaxRadius + (0.04 * this.currentMaxRadius)))
+      .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("text-anchor", (d) => this.anchorCalc(d))
       .attr("font-family", "Courier New")
       .style("fill", (d) => this.lookUpLeafColor(d.data.name));
@@ -182,7 +184,7 @@ export default class TreeDisplay {
     const edges = this.root.links();
 
     // JOIN new data with old svg elements
-    const textLabels = this.getSvgContainer()
+    let textLabels = this.getSvgContainer()
       .selectAll(".edge-value")
       .data(edges,
         (d) => `edge-value-${d.source.data.name}`
@@ -249,10 +251,10 @@ export default class TreeDisplay {
 
 
     let angle = 360 / this.root.leaves().length;
-    let circumference = (angle / 360 * (this.currentMaxRadius * 2 * Math.PI)) / 4;
+    let circumference = (angle / 360 * (2 * this.currentMaxRadius * Math.PI));
 
     // Define the radius of the circle node.
-    let circleNodeRadius = circumference; // Math.sin(2 * Math.PI / this.root.leaves().length) * this.currentMaxRadius;
+    let circleNodeRadius = circumference - (circumference / 1.3); // Math.sin(2 * Math.PI / this.root.leaves().length) * this.currentMaxRadius;
 
     // UPDATE old elements present in new data.
     nodeCircles
@@ -272,6 +274,7 @@ export default class TreeDisplay {
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y)
       .style("fill", TreeDisplay.colorMap.defaultColor)
+      //.attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
       .attr("r", `${circleNodeRadius}px`)
       .on("click", (e, d) => this.handleNodeClick(e, d))
       .on("mouseover", this.mouseOver)
@@ -318,90 +321,94 @@ export default class TreeDisplay {
     this.toggleAlignmentModal(alignmentDataHTML);
   }
 
-/**
- * Handles the click event on a node.
- * When a node is clicked, two circles (buttons) with their associated labels are drawn.
- * The first circle collapses the tree and the second one displays alignment data.
- * After 2000ms, these circles disappear.
- *
- * @param {Object} event - The event data.
- * @param {Object} d - The data associated with the clicked node.
- */
-handleNodeClick(event, d) {
-  // Select the application element and append a new group for the collapse menu
-  d3.selectAll("#application")
-    .data([d])
-    .append("g")
-    .attr("id", "menu-group-collapse");
+  /**
+   * Handles the click event on a node.
+   * When a node is clicked, two circles (buttons) with their associated labels are drawn.
+   * The first circle collapses the tree and the second one displays alignment data.
+   * After 2000ms, these circles disappear.
+   *
+   * @param {Object} event - The event data.
+   * @param {Object} d - The data associated with the clicked node.
+   */
+  handleNodeClick(event, d) {
+    // Select the application element and append a new group for the collapse menu
+    d3.selectAll("#application")
+      .data([d])
+      .append("g")
+      .attr("id", "menu-group-collapse");
 
-  // Create a reference to the collapse menu group
-  let menuGroupCollapse = d3.select("#menu-group-collapse");
+    // Create a reference to the collapse menu group
+    let menuGroupCollapse = d3.select("#menu-group-collapse");
 
-  // Append a circle to the collapse menu group that, when clicked, collapses the tree
-  menuGroupCollapse
-    .append("circle")
-    .attr("cx", d.x - 20)
-    .attr("cy", d.y)
-    .attr("id", "menu-circle-collapse")
-    .attr("r", 15)
-    .attr("fill", "#F44336")
-    .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
-    .on("click", (e, d) => {
-      this.click(e, d); // call the click method when the circle is clicked
-    });
+    menuGroupCollapse.attr('cursor', 'pointer')
 
-  // Append a text label to the collapse menu group
-  menuGroupCollapse
-    .append("text")
-    .text("C")
-    .attr("x", d.x - 20)
-    .attr("y", d.y + 5)
-    .attr("text-anchor", "middle")
-    .attr("fill", "white");
+    // Append a circle to the collapse menu group that, when clicked, collapses the tree
+    menuGroupCollapse
+      .append("circle")
+      .attr("cx", d.x - 20)
+      .attr("cy", d.y)
+      .attr("id", "menu-circle-collapse")
+      .attr("r", 15)
+      .attr("fill", "#F44336")
+      .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
+      .on("click", (e, d) => {
+        this.click(e, d); // call the click method when the circle is clicked
+      });
 
-  // Select the application element and append a new group for the MSA (Multiple Sequence Alignment) menu
-  d3.selectAll("#application")
-    .data([d])
-    .append("g")
-    .attr("id", "menu-group-msa")
-    .on("click", (e, d) => {
-      this.displayAlignmentData(e, d); // call the displayAlignmentData method when the group is clicked
-    });
+    // Append a text label to the collapse menu group
+    menuGroupCollapse
+      .append("text")
+      .text("C")
+      .attr("x", d.x - 20)
+      .attr("y", d.y + 5)
+      .attr("text-anchor", "middle")
+      .attr("fill", "white");
 
-  // Create a reference to the MSA menu group
-  let menuGroupMsa = d3.select("#menu-group-msa");
+    // Select the application element and append a new group for the MSA (Multiple Sequence Alignment) menu
+    d3.selectAll("#application")
+      .data([d])
+      .append("g")
+      .attr("id", "menu-group-msa")
+      .on("click", (e, d) => {
+        this.displayAlignmentData(e, d); // call the displayAlignmentData method when the group is clicked
+      });
 
-  // Append a circle to the MSA menu group
-  menuGroupMsa
-    .append("circle")
-    .attr("cx", d.x - 60)
-    .attr("cy", d.y)
-    .attr("id", "menu-circle-open-msa")
-    .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
-    .attr("r", 15)
-    .attr("fill", "#039be5");
+    // Create a reference to the MSA menu group
+    let menuGroupMsa = d3.select("#menu-group-msa");
 
-  // Append a text label to the MSA menu group
-  menuGroupMsa
-    .append("text")
-    .text("M")
-    .attr("x", d.x - 60)
-    .attr("y", d.y + 5)
-    .attr("style", "0.1rem")
-    .attr("text-anchor", "middle")
-    .attr("fill", "white");
+    menuGroupMsa.attr('cursor', 'pointer')
 
-  // After 2000ms, remove the MSA and collapse menu groups
-  d3.select("#menu-group-msa")
-    .transition()
-    .duration(2000)
-    .remove();
+    // Append a circle to the MSA menu group
+    menuGroupMsa
+      .append("circle")
+      .attr("cx", d.x - 60)
+      .attr("cy", d.y)
+      .attr("id", "menu-circle-open-msa")
+      .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
+      .attr("r", 15)
+      .attr("fill", "#039be5");
 
-  d3.select("#menu-group-collapse")
-    .transition()
-    .duration(2000)
-    .remove();
-}
+    // Append a text label to the MSA menu group
+    menuGroupMsa
+      .append("text")
+      .text("M")
+      .attr("x", d.x - 60)
+      .attr("y", d.y + 5)
+      .attr("style", "0.1rem")
+      .attr("text-anchor", "middle")
+      .attr("fill", "white");
+
+    // After 2000ms, remove the MSA and collapse menu groups
+    d3.select("#menu-group-msa")
+      .transition()
+      .duration(2000)
+      .remove();
+
+    d3.select("#menu-group-collapse")
+      .transition()
+      .duration(2000)
+      .remove();
+  }
 
 
   mouseOver(e, d) {
@@ -518,8 +525,11 @@ handleNodeClick(event, d) {
   }
 
   collapse(d) {
+
     const self = this; // Get a reference to your object.
+  
     if (d.children) {
+      d.collapsed = false;
       d._children = d.children;
       d._children.forEach((child) => {
         self.collapse(child);
@@ -532,14 +542,17 @@ handleNodeClick(event, d) {
     if (d.children) {
       d._children = d.children;
       d.children = null;
+      d.collapsed = true;
     } else {
       d.children = d._children;
       d._children = null;
+      d.collapsed = false;
     }
     this.updateEdges();
     this.updateExternalEdges();
     this.updateLeaveLabels();
     this.updateNodeCircles();
+    this.updateEdgeValues();
   }
 
   /**
@@ -683,62 +696,3 @@ export class TreeMathUtils {
 
 
 
-
-/**
- * Function to draw a tree using the provided parameters.
- *
- * @param {object} tree - The object containing the tree data and maximum radius for the tree visualization. It includes 'maxRadius' which denotes the maximum radius of the tree.
- * @param {string} container - The ID of the DOM element where the tree is to be drawn.
- * @param {object} options - An object containing optional parameters:
- *    fontSize: The font size for the tree visualization.
- *    strokeWidth: The stroke width for the tree visualization.
- *    drawDurationFrontend: The duration for the frontend draw.
- *    leaveOrder: Determines the order of leaves.
- *    leaveColorMap: Determines the color mapping of leaves.
- * @returns {void}
- */
-/**
-export default function drawTree(
-  tree,
-  container,
-  options,
-) {
-
-  // Initialize a new TreeDisplay with the current root
-  let treeDrawer = new TreeDisplay(tree, tree.maxRadius);
-  // Assign the container and currentMaxRadius to the TreeDisplay
-  treeDrawer._container = container;
-
-  // Update optional TreeDisplay parameters if they are provided
-  if ("fontSize" in options) {
-    TreeDisplay.fontSize = options.fontSize;
-  }
-  if ('strokeWidth' in options) {
-    TreeDisplay.sizeMap.strokeWidth = options.strokeWidth;
-  }
-  if ('drawDurationFrontend' in options) {
-    treeDrawer.drawDuration = options.drawDurationFrontend;
-  }
-  if ('leaveOrder' in options) {
-    treeDrawer.leaveOrder = options.leaveOrder;
-  }
-  if ('leaveColorMap' in options) {
-    TreeDisplay.leaveColorMap = options.leaveColorMap;
-  }
-
-  if ('msaMatrix' in options) {
-    TreeDisplay.msaMatrix = options.msaMatrix;
-  }
-
-  // Execute tree drawing methods on the treeDrawer
-  treeDrawer.updateEdges();
-  treeDrawer.updateExternalEdges();
-  treeDrawer.updateLeaveLabels();
-  treeDrawer.updateNodeCircles();
-
-  if ('displayEdgeValue' in options) {
-    treeDrawer.updateEdgeValues(options.displayEdgeValue);
-  }
-
-}
-*/

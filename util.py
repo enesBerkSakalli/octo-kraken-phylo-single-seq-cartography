@@ -126,14 +126,18 @@ from Bio import AlignIO
 from ete3 import Tree
 import json
 import subprocess
+import random
+import string
 
 
 def generate_tree(n):
-    cell_name_list = [f"cell-{i}" for i in range(n)]
+
+    cell_names = [f"{random.choice(string.ascii_letters)}_cell-{i}" for i in range(n)]
+    
     t = Tree()
     t.populate(
         size=n,
-        names_library=cell_name_list,
+        names_library=cell_names,
         reuse_names=False,
         support_range=(0.5, 1.0),
     )
@@ -145,7 +149,6 @@ def generate_tree(n):
         newick_string = newick_string.replace(")1", ")")
         f.write(newick_string)
     return t
-
 
 def write_pair_bracket_string_to_json(pair_bracket_string, file_name):
     newick_json = pair_to_json_encoded(pair_bracket_string)
@@ -179,7 +182,5 @@ def generate_tree_and_and_msa(n):
     subprocess.call(f'./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {file_name_phy}', shell=True)
     write_msa_to_json_format(file_name_phy)
 
-
-
 if __name__ == "__main__":
-    generate_tree_and_and_msa(100)
+    generate_tree_and_and_msa(150)

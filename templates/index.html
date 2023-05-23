@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <!-- Base HTML File written by Enes Berk Sakalli-->
+
 <head>
 
   <head>
@@ -70,22 +71,27 @@
       </ul>
     </div>
 
-
     <div id="modal-sections" class="uk-modal-full" uk-modal>
+
       <div class="uk-modal-dialog" uk-overflow-auto>
-        <button class="uk-modal-container" type="button" uk-close></button>
+
+        <button class="uk-modal-close-default" type="button" uk-close></button>
+
         <div class="uk-modal-header">
-          <h2 class="uk-modal-title"></h2>
+          <h2 class="uk-modal-title">Multiple Sequence alignment</h2>
         </div>
+
         <div class="uk-modal-body">
-          <div id="msa-alignment-window" class="alignment">
-          </div>
+          <div id="msa-alignment-window" class="alignment"></div>
         </div>
-        <div class="uk-modal-footer uk-text-right">
+
+        <div class="uk-modal-footer uk-text-left">
           <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
           <button id="copy-multiple-sequence-alignment" class="uk-button uk-button-primary" type="button">Save</button>
         </div>
+
       </div>
+
     </div>
 
     <!-- This is the beginning of the Color Section-->
@@ -112,12 +118,10 @@
       let applicationContainer = document.getElementById("application-container");
       let width = applicationContainer.clientWidth;
       let height = applicationContainer.clientHeight;
-      let leafColorMap = {}
-      let groupColorMap = {}
+      let leafColorMap = {};
+      let groupColorMap = {};
       let treeDisplay;
-
       //================================================= Main =======================================================
-
       document.getElementById('font-size-slider').addEventListener('change', (e) => {
         treeDisplay.updateDisplay({
           'fontSize': e.target.value,
@@ -248,9 +252,9 @@
        */
       function addBranchValueSelectorListener(tree, leafColorMap) {
         document.getElementById('selector-option-branch-value').addEventListener('change', (e) => {
-       
+
           treeDisplay.updateDisplay({
-              'displayEdgeValue': e.target.value,
+            'displayEdgeValue': e.target.value,
           })
 
         });
@@ -316,7 +320,7 @@
         let colorMap = {};
         leaves.forEach((leave) => {
           let name = leave.data.name;
-          colorMap[name] = "#FFFFFF";
+          colorMap[name] = "#00000";
         });
         return colorMap;
       }
@@ -471,7 +475,7 @@
                         ${element}
                     </div>
                     <div>
-                        <input id="group-${element}" type="color" name="group-color-${element}" value="#FFFFFF" class="group-color" data-group="${element}">
+                        <input id="group-${element}" type="color" name="group-color-${element}" value=""#000000" class="group-color" data-group="${element}">
                     </div>
                 </div>
                     `;
