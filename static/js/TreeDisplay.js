@@ -589,9 +589,10 @@ export default class TreeDisplay {
 
     } else {
 
-      // d3.select(`triangle-${d.data.name}`).remove(); 
-      document.getElementById(`triangle-${d.data.name}`).remove();
-
+      document
+      .getElementById(`triangle-${d.data.name}`)
+      .remove();
+      
       d.children = d._children;
       d._children = null;
       d.collapsed = false;
