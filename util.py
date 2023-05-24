@@ -183,4 +183,8 @@ def generate_tree_and_and_msa(n):
     write_msa_to_json_format(file_name_phy)
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(150)
+    generate_tree_and_and_msa(100)
+    # ((A,B)[&boot=500])
+    # ((A,B)500:10)
+
+    # print(generate_tree(200).write())    

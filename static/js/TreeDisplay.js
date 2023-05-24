@@ -15,6 +15,7 @@ export default class TreeDisplay {
   static sizeMap = {
     strokeWidth: "0.5px",
     fontSize: "1em",
+    circleSize: "1rem "// ,
   };
 
   static msaMatrix = {};
@@ -28,6 +29,7 @@ export default class TreeDisplay {
     this.currentMaxRadius = currentMaxRadius;
     this.container = container;
     // Calculate font size based on some algorithm
+    TreeDisplay.sizeMap.circleSize = this.calculateCircleNodeRadius() // this.calculateCircleNodeRadius()
     TreeDisplay.sizeMap.fontSize = this.calculateFontSize(2);
     this.collapse(this.root.children);
   }
@@ -78,7 +80,6 @@ export default class TreeDisplay {
       .style("stroke", TreeDisplay.colorMap.strokeColor)
       .attr("class", "edge")
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
-      .attr("z-index", "-1")
       .attr("fill", "none")
       .attr("id", (d) => this.generateEdgeId(d))
       .attr("data-source", (d) => d.source.data.name)
@@ -141,9 +142,9 @@ export default class TreeDisplay {
    */
   updateLeaveLabels() {
     let leaves = this.root.leaves()//
-    
-    leaves = leaves.filter((leaf)=> !leaf.collapsed);
-    
+
+    leaves = leaves.filter((leaf) => !leaf.collapsed);
+
     // JOIN new data with old svg elements
     let textLabels = this.getSvgContainer()
       .selectAll(".leave-label")
@@ -237,24 +238,36 @@ export default class TreeDisplay {
   }
 
   /**
+   * Calculates the radius of the circle node based on the number of leaf nodes and the current maximum radius.
+   *
+   * @returns {number} The radius of the circle node.
+   */
+  calculateCircleNodeRadius() {
+    // Calculate the angle between each leaf node in degrees
+    let angle = 360 / this.root.leaves().length;
+    // Calculate the circumference of the circle based on the angle and the current maximum radius
+    let circumference = (angle / 360 * (2 * this.currentMaxRadius * Math.PI));
+    // Calculate the radius of the circle node, adjusting it by subtracting a portion of the circumference to achieve the desired size
+    let circleNodeRadius = circumference - (circumference / 1.3);
+    return circleNodeRadius;
+  }
+
+
+  /**
    * Creates and updates leaf circle nodes for the tree.
    * On each node, click and hover events are attached for interactivity.
    * @returns {void}
    */
   updateNodeCircles() {
-    const nodes = this.root;
+    let nodes = this.root;
+
+    let nodesNotCollapsed = nodes.descendants().filter((node) => node.children)
 
     // JOIN new data with old SVG elements
     const nodeCircles = this.getSvgContainer()
       .selectAll(".node")
-      .data(nodes, (d) => d.data.name);
+      .data(nodesNotCollapsed, (d) => d.data.name);
 
-
-    let angle = 360 / this.root.leaves().length;
-    let circumference = (angle / 360 * (2 * this.currentMaxRadius * Math.PI));
-
-    // Define the radius of the circle node.
-    let circleNodeRadius = circumference - (circumference / 1.3); // Math.sin(2 * Math.PI / this.root.leaves().length) * this.currentMaxRadius;
 
     // UPDATE old elements present in new data.
     nodeCircles
@@ -274,11 +287,11 @@ export default class TreeDisplay {
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y)
       .style("fill", TreeDisplay.colorMap.defaultColor)
-      //.attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
-      .attr("r", `${circleNodeRadius}px`)
+      .attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
+      .attr("r", `${TreeDisplay.sizeMap.circleSize}px`)
       .on("click", (e, d) => this.handleNodeClick(e, d))
       .on("mouseover", this.mouseOver)
-      .on("mouseleave", this.mouseLeaveNode)
+      .on("mouseOn", this.mouseLeaveNode)
       .raise();
   }
 
@@ -398,6 +411,7 @@ export default class TreeDisplay {
       .attr("text-anchor", "middle")
       .attr("fill", "white");
 
+
     // After 2000ms, remove the MSA and collapse menu groups
     d3.select("#menu-group-msa")
       .transition()
@@ -460,12 +474,9 @@ export default class TreeDisplay {
     const curveY = d.source.radius * Math.sin(d.target.angle);
 
     const arcFlag = Math.abs(d.target.angle - d.source.angle) > Math.PI ? 1 : 0;
+    const sweepFlag = Math.abs(d.source.angle) < Math.abs(d.target.angle) ? 1 : 0;
 
-    const sweepFlag =
-      Math.abs(d.source.angle) < Math.abs(d.target.angle) ? 1 : 0;
-
-    return `M ${mx}, ${my} A${d.source.radius}, ${d.source.radius
-      } ${0} ${arcFlag} ${sweepFlag} ${curveX}, ${curveY} L ${lx}, ${ly}`;
+    return `M ${mx}, ${my} A${d.source.radius}, ${d.source.radius} ${0} ${arcFlag} ${sweepFlag} ${curveX}, ${curveY} L ${lx}, ${ly}`;
   }
 
   /**
@@ -527,7 +538,7 @@ export default class TreeDisplay {
   collapse(d) {
 
     const self = this; // Get a reference to your object.
-  
+
     if (d.children) {
       d.collapsed = false;
       d._children = d.children;
@@ -540,14 +551,53 @@ export default class TreeDisplay {
 
   click(e, d) {
     if (d.children) {
+
+      function createTrianglePath(d) {
+        let children = d.children;
+        children.sort(function (a, b) {
+          return a.angle - b.angle
+        })
+        let path = d3.path();
+        path.moveTo(d.x, d.y);
+        path.lineTo(children[0].x, children[0].y);
+        path.lineTo(children[children.length - 1].x, children[children.length - 1].y);
+        path.closePath();
+        return path.toString();
+      }
+
+      // JOIN new data with old SVG elements
+      const nodeTriangle = this.getSvgContainer()
+        .selectAll(".node-collapsed")
+        .data([d], (d) => d.data.name);
+
+      nodeTriangle
+        .enter()
+        .append("path")
+        .attr("id", (d) => `triangle-${d.data.name}`)
+        .attr("class", "node-collapsed")
+        .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+        .attr("stroke", "black")
+        .attr("fill", "orange")
+        .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
+        .attr("d", (d) => createTrianglePath(d))
+        .on('click', (e, d) => this.click(e, d))
+        .raise();
+
       d._children = d.children;
       d.children = null;
       d.collapsed = true;
+
     } else {
+
+      // d3.select(`triangle-${d.data.name}`).remove(); 
+      document.getElementById(`triangle-${d.data.name}`).remove();
+
       d.children = d._children;
       d._children = null;
       d.collapsed = false;
+
     }
+
     this.updateEdges();
     this.updateExternalEdges();
     this.updateLeaveLabels();
@@ -626,6 +676,8 @@ export default class TreeDisplay {
   }
 
 }
+
+
 
 export class TreeMathUtils {
 

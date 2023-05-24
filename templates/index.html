@@ -143,7 +143,9 @@
               );
 
               let tree = constructTree(data, false, 'application-container');
+              
               leafColorMap = initializeLeafColorMap(tree.leaves());
+
               treeDisplay = new TreeDisplay(tree, tree.maxRadius, 'application');
 
               treeDisplay.updateDisplay({
@@ -152,14 +154,16 @@
               });
 
               ModalColorArray(tree);
+
               // Instantiate the ColorSelector class and call the init method
               setZoom();
+
               handleDataOptionsList(tree, leafColorMap);
 
               document.getElementById('save-tree-button').addEventListener('click', (e) => {
                 gui.saveSVG();
               });
-
+              
             });
         });
 
