@@ -132,7 +132,7 @@ import string
 
 def generate_tree(n):
 
-    cell_names = [f"{random.choice(string.ascii_letters)}_cell-{i}" for i in range(n)]
+    cell_names = [f"{random.choice(string.ascii_uppercase)}_cell-{i}" for i in range(n)]
     
     t = Tree()
     t.populate(
@@ -159,10 +159,14 @@ def write_pair_bracket_string_to_json(pair_bracket_string, file_name):
 
 def write_msa_to_json_format(file_name):
     alignment = AlignIO.read(open(file_name), "phylip")
-    multiple_sequence_alignment_dictionary = {}
+    multiple_sequence_alignment_dictionary = []
     for record in alignment:
-        print(record.seq + " " + record.id)
-        multiple_sequence_alignment_dictionary[str(record.id)] = str(record.seq)
+
+        msa_entry = {}
+        msa_entry["id"] = str(record.id)
+        msa_entry["sequence"] = str(record.seq)
+        multiple_sequence_alignment_dictionary.append(msa_entry)
+
     with open("./static/test/random_generated_tree_msa.json", "w") as f:
         f.write(json.dumps(multiple_sequence_alignment_dictionary, indent=4))
 
@@ -186,5 +190,4 @@ if __name__ == "__main__":
     generate_tree_and_and_msa(100)
     # ((A,B)[&boot=500])
     # ((A,B)500:10)
-
     # print(generate_tree(200).write())    

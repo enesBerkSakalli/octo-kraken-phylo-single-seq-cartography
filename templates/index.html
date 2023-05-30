@@ -21,9 +21,6 @@
     <!-- Link to the D3.js library, which is a JavaScript library for creating dynamic and interactive data visualizations -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <!-- Link to the OHM.js library, which is a JavaScript library for parsing and manipulating data -->
-    <script type="text/javascript" src="../static/js/ohm.min.js"></script>
-
     <!-- Link to the UIkit CSS library for styling and layout -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/css/uikit.min.css" />
 
@@ -31,6 +28,10 @@
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit.min.js"></script>
     <!-- Link to the UIkit Icon library to enable use of various icons in the UI -->
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit-icons.min.js"></script>
+
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
   </head>
 </head>
 
@@ -143,7 +144,7 @@
               );
 
               let tree = constructTree(data, false, 'application-container');
-              
+
               leafColorMap = initializeLeafColorMap(tree.leaves());
 
               treeDisplay = new TreeDisplay(tree, tree.maxRadius, 'application');
@@ -163,7 +164,7 @@
               document.getElementById('save-tree-button').addEventListener('click', (e) => {
                 gui.saveSVG();
               });
-              
+
             });
         });
 

@@ -125,8 +125,6 @@ export default class TreeDisplay {
       .attr("d", (d) => this.buildEdgeExtension(d, this.currentMaxRadius));
   }
 
-
-
   /**
    * Calculate font size based on number of leaves and current maximum radius
    * @return {number}
@@ -252,7 +250,6 @@ export default class TreeDisplay {
     return circleNodeRadius;
   }
 
-
   /**
    * Creates and updates leaf circle nodes for the tree.
    * On each node, click and hover events are attached for interactivity.
@@ -287,30 +284,12 @@ export default class TreeDisplay {
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y)
       .style("fill", TreeDisplay.colorMap.defaultColor)
-      .attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
+      // .attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
       .attr("r", `${TreeDisplay.sizeMap.circleSize}px`)
       .on("click", (e, d) => this.handleNodeClick(e, d))
-      .on("mouseover", this.mouseOver)
-      .on("mouseOn", this.mouseLeaveNode)
+      .on("mouseover", (e, d) => mouseOverNode(e, d))
+      .on("mouseout", (e, d) => mouseLeaveNode(e, d))
       .raise();
-  }
-
-  /**
-   * Fetches and prepares the HTML for the sequence alignment data.
-   *
-   * @param {Array} taxonList - The list of taxa for the selected node.
-   * @param {Object} msa - The multiple sequence alignment data.
-   * @return {string} The generated HTML string.
-   */
-  generateSequenceAlignmentHTML(taxonList) {
-    return taxonList.map(taxon => `
-    <div class="sequence">
-      <div class="taxon-id" style="min-width: 200px !important; background:${TreeDisplay.leaveColorMap[taxon]}">${taxon}</div>
-      <div style="background:${TreeDisplay.leaveColorMap[taxon]}" class="letter">
-        <span>${TreeDisplay.msaMatrix[taxon]}</span>
-      </div>            
-    </div>
-  `).join('');
   }
 
   /**
@@ -318,9 +297,23 @@ export default class TreeDisplay {
    *
    * @param {string} alignmentDataHTML - The HTML string containing the sequence alignment data.
    */
-  toggleAlignmentModal(alignmentDataHTML) {
-    const alignmentContainer = document.getElementById('msa-alignment-window');
-    alignmentContainer.innerHTML = alignmentDataHTML;
+  toggleAlignmentModal(d) {
+    // Filter the objectsList based on existence in compareList
+    const filteredList = TreeDisplay.msaMatrix.filter(obj => {
+      return d.data.name.some(nodeTaxonName => nodeTaxonName === obj.id);
+    });
+
+    let table = new Tabulator('#msa-alignment-window', {
+      data: filteredList,
+      renderHorizontal: "virtual", //enable horizontal virtual DOM 
+      columns: [
+        { title: "id", field: "id" },
+        { title: "Sequence", field: "sequence" }
+      ]
+    });
+
+    table.setFilter("id", "sequence", { matchAll: true });
+
     UIkit.modal('#modal-sections').toggle();
   }
 
@@ -330,8 +323,7 @@ export default class TreeDisplay {
    * @param {Array} taxonList - The list of taxa for the selected node.
    */
   displayAlignmentData(e, d) {
-    const alignmentDataHTML = this.generateSequenceAlignmentHTML(d.data.name);
-    this.toggleAlignmentModal(alignmentDataHTML);
+    this.toggleAlignmentModal(d);
   }
 
   /**
@@ -422,40 +414,6 @@ export default class TreeDisplay {
       .transition()
       .duration(2000)
       .remove();
-  }
-
-
-  mouseOver(e, d) {
-
-    d3.selectAll(".node")
-      .transition()
-      .duration(200)
-      .style("opacity", .5);
-
-    d3.select(this)
-      .transition()
-      .duration(200)
-      .style("opacity", 1)
-      .style("stroke", "rgb(38, 222, 176)");
-
-  }
-
-  mouseLeaveNode(e, d) {
-
-    d3.selectAll(".node")
-      .transition()
-      .duration(200)
-      .style("opacity", 1);
-
-    d3.select("#menu-circle")
-      .transition()
-      .duration(1000)
-      .remove();
-
-    d3.select(this)
-      .transition()
-      .duration(200)
-      .style("stroke", "transparent");
   }
 
   /**
@@ -590,9 +548,9 @@ export default class TreeDisplay {
     } else {
 
       document
-      .getElementById(`triangle-${d.data.name}`)
-      .remove();
-      
+        .getElementById(`triangle-${d.data.name}`)
+        .remove();
+
       d.children = d._children;
       d._children = null;
       d.collapsed = false;
@@ -678,8 +636,6 @@ export default class TreeDisplay {
 
 }
 
-
-
 export class TreeMathUtils {
 
   /**
@@ -747,5 +703,44 @@ export class TreeMathUtils {
 
 }
 
+function mouseOverNode(e, d) {
+
+  d3.selectAll(".node")
+    .transition()
+    .duration(200)
+    .style("opacity", .5);
+
+  d3.select(this)
+    .transition()
+    .duration(200)
+    .style("opacity", 0)
+    .style("stroke", "rgb(38, 222, 176)");
+
+    d3.select(this)
+    .transition()
+    .duration(200)
+    .style("opacity", 1)
+    .style("stroke", "rgb(38, 222, 176)");
 
 
+}
+
+function mouseLeaveNode(e, d) {
+
+  d3.selectAll(".node")
+    .transition()
+    .duration(200)
+    .style("opacity", 1);
+
+  d3.select(this)
+    .transition()
+    .duration(200)
+    .style("opacity", 1)
+    .style("stroke", "transparent");
+
+  d3.select("#menu-circle")
+    .transition()
+    .duration(1000)
+    .remove();
+
+}
