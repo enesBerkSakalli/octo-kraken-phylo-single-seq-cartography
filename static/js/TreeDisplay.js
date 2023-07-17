@@ -28,6 +28,7 @@ export default class TreeDisplay {
     this.root = _currentRoot;
     this.currentMaxRadius = currentMaxRadius;
     this.container = container;
+    this.stateOption = "default";
     // Calculate font size based on some algorithm
     TreeDisplay.sizeMap.circleSize = this.calculateCircleNodeRadius() // this.calculateCircleNodeRadius()
     TreeDisplay.sizeMap.fontSize = this.calculateFontSize(2);
@@ -49,8 +50,8 @@ export default class TreeDisplay {
    * @param  {Object} link
    * @return {string}
    */
-  generateEdgeId(link) {
-    return `link-${this.container}-${link.source.data.name.join("-")}`;
+  getEdgeId(link) {
+    return `link-${this.container}-${link.target.data.name}`;
   }
 
   /**
@@ -64,7 +65,7 @@ export default class TreeDisplay {
 
     let edges = this.getSvgContainer()
       .selectAll(".edge")
-      .data(this.root.links(), (d) => this.getLinkId);
+      .data(this.root.links(), (d) => this.getEdgeId(d));
 
     // EXIT old elements not present in new data.
     edges
@@ -81,7 +82,7 @@ export default class TreeDisplay {
       .attr("class", "edge")
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("fill", "none")
-      .attr("id", (d) => this.generateEdgeId(d))
+      .attr("id", (d) => this.getEdgeId(d))
       .attr("data-source", (d) => d.source.data.name)
       .attr("data-target", (d) => d.target.data.name)
       .attr("d", (d) => this.buildSvgString(d))
@@ -90,8 +91,8 @@ export default class TreeDisplay {
     // UPDATE old elements present in new data.
     edges
       .attr("z-index", "-1")
-      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
-      .style("stroke", 'blue');
+      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth);
+
   }
 
   /**
@@ -197,10 +198,10 @@ export default class TreeDisplay {
       selection
         .attr("transform", (d) => this.orientText(d.target, (d.source.radius + d.target.radius) / 2))
         .attr("text-anchor", (d) => this.anchorCalc(d))
-        .text((d) => this.getEdgeValue(value, d))
+        .text((d) => this.getNodeValue(value, d.target))
         .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
         .attr("class", "edge-value")
-        .attr("dy", "-1em")
+        .attr("dy", "-0.25em")
         .attr("font-family", "Mono Space")
         .style("fill", TreeDisplay.colorMap.defaultLabelColor);
     };
@@ -220,14 +221,14 @@ export default class TreeDisplay {
    * 
    * @returns {string|undefined} - The retrieved value or undefined if not found.
    */
-  getEdgeValue(value, d) {
+  getNodeValue(value, d) {
     // if 'value' is "length", return the length
     if (value === "length") {
-      return d.source.data.length;
+      return d.data.length;
     }
     // else, if the 'values' object exists on the target, return the corresponding value
-    else if (d.target.data.values) {
-      return d.target.data.values[value];
+    else if (d.data.values) {
+      return d.data.values[value];
     }
     // if 'values' object does not exist, return undefined
     else {
@@ -290,6 +291,10 @@ export default class TreeDisplay {
       .on("mouseover", (e, d) => mouseOverNode(e, d))
       .on("mouseout", (e, d) => mouseLeaveNode(e, d))
       .raise();
+  }
+
+  removeNodeCircles() {
+    d3.selectAll(".node").remove();
   }
 
   /**
@@ -507,21 +512,21 @@ export default class TreeDisplay {
     }
   }
 
+  createTrianglePath(d) {
+    let children = d.children;
+    children.sort(function (a, b) {
+      return a.angle - b.angle
+    })
+    let path = d3.path();
+    path.moveTo(d.x, d.y);
+    path.lineTo(children[0].x, children[0].y);
+    path.lineTo(children[children.length - 1].x, children[children.length - 1].y);
+    path.closePath();
+    return path.toString();
+  }
+
   click(e, d) {
     if (d.children) {
-
-      function createTrianglePath(d) {
-        let children = d.children;
-        children.sort(function (a, b) {
-          return a.angle - b.angle
-        })
-        let path = d3.path();
-        path.moveTo(d.x, d.y);
-        path.lineTo(children[0].x, children[0].y);
-        path.lineTo(children[children.length - 1].x, children[children.length - 1].y);
-        path.closePath();
-        return path.toString();
-      }
 
       // JOIN new data with old SVG elements
       const nodeTriangle = this.getSvgContainer()
@@ -537,9 +542,20 @@ export default class TreeDisplay {
         .attr("stroke", "black")
         .attr("fill", "orange")
         .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
-        .attr("d", (d) => createTrianglePath(d))
+        .attr("d", (d) => this.createTrianglePath(d))
         .on('click', (e, d) => this.click(e, d))
         .raise();
+
+      d.descendants().forEach((node) => {
+        if (node.collapsed) {
+          node.collapsed = false;
+          node.children = node._children;
+          node._children = null;
+          document
+            .getElementById(`triangle-${node.data.name}`)
+            .remove();
+        }
+      });
 
       d._children = d.children;
       d.children = null;
@@ -561,7 +577,12 @@ export default class TreeDisplay {
     this.updateExternalEdges();
     this.updateLeaveLabels();
     this.updateNodeCircles();
-    this.updateEdgeValues();
+
+    if ('displayEdgeValue' in this.stateOptions) {
+      this.setGradientForEdges(this.stateOptions.displayEdgeValue);  // Update the node circles
+      this.updateEdgeValues(this.stateOptions.displayEdgeValue);
+    }
+
   }
 
   /**
@@ -573,6 +594,7 @@ export default class TreeDisplay {
     * @returns {void}
     */
   updateDisplay(options) {
+    this.stateOptions = options;
 
     // Update this instance's attributes if corresponding options are provided
     if ("fontSize" in options) {
@@ -581,29 +603,67 @@ export default class TreeDisplay {
     if ('strokeWidth' in options) {
       TreeDisplay.sizeMap.strokeWidth = options.strokeWidth;  // Update stroke width
     }
-    if ('drawDurationFrontend' in options) {
-      this.drawDuration = options.drawDurationFrontend;  // Update drawing duration
-    }
-    if ('leaveOrder' in options) {
-      this.leaveOrder = options.leaveOrder;  // Update the order of leaves
-    }
     if ('leaveColorMap' in options) {
       TreeDisplay.leaveColorMap = options.leaveColorMap;  // Update the color mapping of leaves
     }
     if ('msaMatrix' in options) {
       TreeDisplay.msaMatrix = options.msaMatrix;  // Update MSA matrix
     }
+    if ('mode' in options) {
+      if (options.mode !== "classical-phylo") {
+        console.log(options.mode)
+        this.updateNodeCircles();
+      } else {
+        console.log(options.mode)
+        this.removeNodeCircles();
+      }
+    }
 
     // Call this instance's methods to update visualization attributes
     this.updateEdges();  // Update the edges of the tree
     this.updateExternalEdges();  // Update the external edges of the tree
     this.updateLeaveLabels();  // Update the labels of the leaves
-    this.updateNodeCircles();  // Update the node circles
-
     // Update edge values if displayEdgeValue option is provided
     if ('displayEdgeValue' in options) {
+      this.setGradientForEdges(options.displayEdgeValue);  // Update the node circles
       this.updateEdgeValues(options.displayEdgeValue);
     }
+
+
+  }
+
+  setGradientForEdges(PROPERTY_ACCESSOR) {
+    let max = Number.NEGATIVE_INFINITY;
+    let min = Number.POSITIVE_INFINITY;
+
+    this.root.descendants().forEach((node) => {
+      let value = this.getNodeValue(PROPERTY_ACCESSOR, node);
+      if (value > max) {
+        max = value;
+      }
+      if (value < min) {
+        min = value;
+      }
+    });
+
+    let scale = d3.scaleLinear()
+      .domain([min, max])
+      .range([0, 1]);
+    // Use the scale with d3.interpolateCool to map values to colors
+    let color = d => d3.interpolatePlasma(scale(d));
+
+    let edges = this.getSvgContainer()
+      .selectAll(".edge");
+
+    edges.style("stroke", (d) => {
+
+      edges.style("stroke", (d) => {
+        const value = this.getNodeValue(PROPERTY_ACCESSOR, d.target);
+        return value ? color(value) : "grey";
+      });
+
+    });
+
   }
 
   // Getter for container
@@ -633,7 +693,6 @@ export default class TreeDisplay {
   set leaveColorMap(value) {
     this._leaveColorMap = value;
   }
-
 }
 
 export class TreeMathUtils {
@@ -701,6 +760,58 @@ export class TreeMathUtils {
     return radius;
   }
 
+  static findMaxValue(node, value) {
+    let max = TreeMathUtils.getNodeValue(value, node); // assuming each node has a 'value' property
+
+    if (node.children) {
+      node.children.forEach(child => {
+        const childMax = TreeMathUtils.findMaxValue(child);
+        max = Math.max(max, childMax);
+      });
+    }
+
+    return max;
+  }
+
+  static findMinValue(node, value) {
+    let min = node.value; // assuming each node has a 'value' property
+
+    if (node.children) {
+      node.children.forEach(child => {
+        const childMin = TreeMathUtils.findMinValue(child);
+        min = Math.min(min, childMin);
+      });
+    }
+
+    return min;
+  }
+
+
+  /**
+   * Retrieves the edge value based on the given value type.
+   * 
+   * @param {string} value - The type of the value that needs to be retrieved.
+   * @param {Object} d - The data object for the edge.
+   * 
+   * @returns {string|undefined} - The retrieved value or undefined if not found.
+   */
+  static getNodeValue(value, d) {
+    // if 'value' is "length", return the length
+    if (value === "length") {
+      return d.source.data.length;
+    }
+    // else, if the 'values' object exists on the target, return the corresponding value
+    else if (d.data.values) {
+      return d.data.values[value];
+    }
+    // if 'values' object does not exist, return undefined
+    else {
+      return undefined;
+    }
+  }
+
+
+
 }
 
 function mouseOverNode(e, d) {
@@ -716,7 +827,7 @@ function mouseOverNode(e, d) {
     .style("opacity", 0)
     .style("stroke", "rgb(38, 222, 176)");
 
-    d3.select(this)
+  d3.select(this)
     .transition()
     .duration(200)
     .style("opacity", 1)

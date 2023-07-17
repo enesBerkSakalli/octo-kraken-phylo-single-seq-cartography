@@ -56,6 +56,25 @@
           Branch Values
         </li>
       </ul>
+
+      <ul id="select-mode-container" class="uk-nav uk-nav-sub">
+        <li class="uk-nav-header"><span class="uk-margin-small-right" uk-icon="icon: file-text"></span>
+          MSA-Modus
+          <select id="mode-selector" class="uk-select" aria-label="Select">
+            <option value="phylo-msa">Model-Phylo-MSA</option>
+            <option value="classical-phylo">Mode-Classical-Phylo</option>
+          </select>
+        </li>
+      </ul>
+      <ul id="select-color-mode-container" class="uk-nav uk-nav-sub">
+        <li class="uk-nav-header"><span class="uk-margin-small-right" uk-icon="icon: file-text"></span>
+          Color-Mode
+          <select id="color-mode-selector" class="uk-select" aria-label="Select">
+            <option value="regular">Regular</option>
+            <option value="plasma">Plasma</option>
+          </select>
+        </li>
+      </ul>
       <ul class="uk-nav uk-nav-sub">
         <li>
           <div>
@@ -67,6 +86,12 @@
           <div>
             <span uk-icon="icon: expand"></span>Font-Size</a>
             <input id="font-size-slider" class="uk-range" type="range" min="0.5" max="5" step="0.25">
+          </div>
+        </li>
+        <li>
+          <div>
+            <span uk-icon="icon: expand"></span>Stroke-Width</a>
+            <input id="stroke-width-slider" class="uk-range" type="range" min="0.5" max="5" step="0.25">
           </div>
         </li>
       </ul>
@@ -90,6 +115,7 @@
           <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
           <button id="copy-multiple-sequence-alignment" class="uk-button uk-button-primary" type="button">Save</button>
         </div>
+
 
       </div>
 
@@ -128,6 +154,36 @@
           'fontSize': e.target.value,
         });
       });
+      document.getElementById('stroke-width-slider').addEventListener('change', (e) => {
+        treeDisplay.updateDisplay({
+          'strokeWidth': e.target.value,
+        });
+      });
+      document.getElementById('stroke-width-slider').addEventListener('change', (e) => {
+        treeDisplay.updateDisplay({
+          'strokeWidth': e.target.value,
+        });
+      });
+
+      document.getElementById('mode-selector').addEventListener('change', (e) => {
+        // Get the select element by its ID
+        var selectElement = document.getElementById('mode-selector');
+        // Get the selected value
+        let selectedModel = selectElement.value;
+        treeDisplay.updateDisplay({
+          'mode': selectedModel
+        });
+      });
+
+      document.getElementById('mode-selector').addEventListener('change', (e) => {
+        // Get the select element by its ID
+        var selectElement = document.getElementById('color-mode-selector');
+        // Get the selected value
+        let selectedModel = selectElement.value;
+        treeDisplay.updateDisplay({
+          'colorMode': selectedModel
+        });
+      });
 
       document.getElementById('rotate-tree-slider').addEventListener('input', (e) => {
         d3.select('#application').attr("transform", `translate(${width / 2}, ${height / 2})` + "rotate(" + e.target.value + ")");
@@ -154,11 +210,10 @@
                 'msaMatrix': msa,
               });
 
-              ModalColorArray(tree);
 
+              ModalColorArray(tree);
               // Instantiate the ColorSelector class and call the init method
               setZoom();
-
               handleDataOptionsList(tree, leafColorMap);
 
               document.getElementById('save-tree-button').addEventListener('click', (e) => {
