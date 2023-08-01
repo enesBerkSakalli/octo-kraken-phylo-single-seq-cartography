@@ -189,7 +189,7 @@
         d3.select('#application').attr("transform", `translate(${width / 2}, ${height / 2})` + "rotate(" + e.target.value + ")");
       });
 
-      d3.json("../static/test/random_generated_tree.json")
+      d3.json("../static/test/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.json")
         .then((data) => {
 
           d3.json("../static/test/random_generated_tree_msa.json")

@@ -28,7 +28,7 @@ export default class TreeDisplay {
     this.root = _currentRoot;
     this.currentMaxRadius = currentMaxRadius;
     this.container = container;
-    this.stateOption = "default";
+    this.stateOptions = {};
     // Calculate font size based on some algorithm
     TreeDisplay.sizeMap.circleSize = this.calculateCircleNodeRadius() // this.calculateCircleNodeRadius()
     TreeDisplay.sizeMap.fontSize = this.calculateFontSize(2);
@@ -83,8 +83,6 @@ export default class TreeDisplay {
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("fill", "none")
       .attr("id", (d) => this.getEdgeId(d))
-      .attr("data-source", (d) => d.source.data.name)
-      .attr("data-target", (d) => d.target.data.name)
       .attr("d", (d) => this.buildSvgString(d))
       .style("stroke-opacity", 1);
 
@@ -107,10 +105,8 @@ export default class TreeDisplay {
 
     // UPDATE old elements present in new data.
     colorExternalEdges
-      .transition()
+      .style("stroke", (d) => this.lookUpLeafColor(d.data.name))
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
-      .ease(d3.easeExpInOut)
-      .duration(this.drawDuration)
 
     colorExternalEdges.exit().remove();
 
@@ -119,7 +115,7 @@ export default class TreeDisplay {
       .enter()
       .append("path")
       .attr("class", "edge-extension")
-      .style("stroke", this.lookUpLeafColor(this.root.data.name))
+      .style("stroke", TreeDisplay.colorMap.extensionLinkColor)
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("stroke-dasharray", 5 + ",5")
       .attr("fill", "none")
@@ -187,7 +183,7 @@ export default class TreeDisplay {
     let textLabels = this.getSvgContainer()
       .selectAll(".edge-value")
       .data(edges,
-        (d) => `edge-value-${d.source.data.name}`
+        (d) => `edge-value-${d.source.data.name}-${d.target.data.name}`
       );
 
     // REMOVE old elements not present in new data
@@ -208,7 +204,6 @@ export default class TreeDisplay {
 
     // UPDATE old elements present in new data
     setTextLabelAttributes(textLabels);
-
     // ENTER new elements present in new data
     setTextLabelAttributes(textLabels.enter().append("text"));
   }
@@ -408,7 +403,6 @@ export default class TreeDisplay {
       .attr("text-anchor", "middle")
       .attr("fill", "white");
 
-
     // After 2000ms, remove the MSA and collapse menu groups
     d3.select("#menu-group-msa")
       .transition()
@@ -562,15 +556,12 @@ export default class TreeDisplay {
       d.collapsed = true;
 
     } else {
-
       document
         .getElementById(`triangle-${d.data.name}`)
         .remove();
-
       d.children = d._children;
       d._children = null;
       d.collapsed = false;
-
     }
 
     this.updateEdges();
@@ -594,7 +585,11 @@ export default class TreeDisplay {
     * @returns {void}
     */
   updateDisplay(options) {
-    this.stateOptions = options;
+    // Update the existing dictionary with new values
+    for (let key in options) {
+      console.log(this.stateOptions)
+      this.stateOptions[key] = options[key];
+    }
 
     // Update this instance's attributes if corresponding options are provided
     if ("fontSize" in options) {
@@ -625,10 +620,18 @@ export default class TreeDisplay {
     this.updateLeaveLabels();  // Update the labels of the leaves
     // Update edge values if displayEdgeValue option is provided
     if ('displayEdgeValue' in options) {
-      this.setGradientForEdges(options.displayEdgeValue);  // Update the node circles
+      if (options.colorMode !== "regular") {
+        this.setGradientForEdges(options.displayEdgeValue);  // Update the node circles
+      } else {
+        this.setToEdgesToColor();
+      }
       this.updateEdgeValues(options.displayEdgeValue);
     }
+  }
 
+  setToEdgesToColor() {
+    let edges = this.getSvgContainer().selectAll(".edge");
+    edges.style("stroke", "black");
 
   }
 
@@ -653,15 +656,12 @@ export default class TreeDisplay {
     let color = d => d3.interpolatePlasma(scale(d));
 
     let edges = this.getSvgContainer()
-      .selectAll(".edge");
+      .selectAll(".edge")
+      .data(this.root.links(), (d) => this.getEdgeId(d));
 
     edges.style("stroke", (d) => {
-
-      edges.style("stroke", (d) => {
-        const value = this.getNodeValue(PROPERTY_ACCESSOR, d.target);
-        return value ? color(value) : "grey";
-      });
-
+      const value = this.getNodeValue(PROPERTY_ACCESSOR, d.target);
+      return value ? color(value) : "grey";
     });
 
   }

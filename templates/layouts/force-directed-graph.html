@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Directed Force Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="container">
+        <svg id="phylo-cello-graph"></svg>
+    </div>
+
+    <script type="module">
+        import constructTree from "../../static/js/TreeConstructor.js";
+        import TreeDisplay from "../../static/js/TreeDisplay.js";
+
+        const nodes = [];
+        const links = [];
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+
+        function setZoom() {
+            d3.select('#container').call(
+                d3.zoom().on("zoom", zoomed)
+            );
+        }
+
+        function zoomed({ transform }) {
+
+            let xZoomedTransform = (width / 2) + (transform.x / 2);
+            let yZoomedTransform = (height / 2) + (transform.y / 2);
+
+            d3.select('#phylo-cello-graph').attr("transform", `translate(${xZoomedTransform}, ${yZoomedTransform})` + "scale(" + transform.k + ")");
+        }
+
+        setZoom();
+
+        d3.json("../../static/test/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.json")
+            .then((data) => {
+
+                var zoom = d3.zoom()
+                    .scaleExtent([0.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
+                    .on("zoom", zoomed);
+                    
+                const svg = d3.select("#phylo-cello-graph");
+
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                svg.attr("width", width);
+                svg.attr("height", height);
+
+                let root = constructTree(data, false, 'phylo-cello-graph');
+
+                const links = root.links();
+                const nodes = root.descendants();
+
+                const simulation = d3.forceSimulation(nodes)
+                    .force("link", d3.forceLink(links).id(d => d.id).distance(0).strength(1))
+                    .force("charge", d3.forceManyBody().strength(-50))
+                    .force("center", d3.forceCenter(width / 2, height / 2)) // Centering force
+                    .force("x", d3.forceX())
+                    .force("y", d3.forceY());
+
+                const link = svg.append("g")
+                    .attr("stroke", "#999")
+                    .attr("stroke-opacity", 0.6)
+                    .selectAll("line")
+                    .data(links)
+                    .join("line");
+
+                const node = svg.append("g")
+                    .attr("stroke", "#000")
+                    .attr("stroke-width", 1.5)
+                    .selectAll("g")
+                    .data(nodes)
+                    .join("g")
+                //.call(drag(simulation));
+
+                node.append("circle")
+                    .attr("fill", (d) => {
+                        return d.children ? "#000000" : d.data.values.color
+                    })
+                    .attr("stroke", (d) => {
+                        return d.children ? "#000000" : d.data.values.color
+                    })
+                    .attr("r", d => d.children ? 1 : 10);
+
+                node.append("text")
+                    .text(d => d.children ? null : d.data.values['&type'])
+                    .attr('font-family', 'sans-serif')
+                    .attr('font-weight', 'light')
+                    .attr('font-size', 8)
+                    .attr('x', 2)
+                    .attr('y', 3);
+
+                node.append("title")
+                    .text(d => d.data.name);
+
+                simulation.on("tick", () => {
+                    link
+                        .attr("x1", d => d.source.x)
+                        .attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x)
+                        .attr("y2", d => d.target.y);
+
+                    node
+                        .attr("transform", d => `translate(${d.x},${d.y})`);
+                });
+            });
+    </script>
+</body>
+
+</html>

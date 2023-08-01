@@ -4,9 +4,10 @@ import json
 import subprocess
 import random
 import string
-from parser_util import write_pair_bracket_string_to_json
+from advanced_tree_parser_util import write_pair_bracket_string_to_json
 import re
 import ngesh
+
 
 def generate_tree(n):
     cell_names = [f"{random.choice(string.ascii_uppercase)}_cell-{i}" for i in range(n)]
@@ -75,5 +76,4 @@ def add_values_to_nodes(newick_string):
 
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(350)
- 
+    generate_tree_and_and_msa(10)
