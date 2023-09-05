@@ -1,12 +1,52 @@
 from Bio import AlignIO
 from ete3 import Tree
 import json
-import subprocess
 import random
 import string
-from advanced_tree_parser_util import write_pair_bracket_string_to_json
+from advanced_tree_parser_util import (
+    write_pair_bracket_string_to_json,
+    convert_pair_bracket_string_to_json,
+)
 import re
-import ngesh
+import matplotlib.pyplot as plt
+import numpy as np
+import random
+from sklearn.datasets._samples_generator import make_blobs
+from sklearn.cluster import KMeans
+
+
+def generate_clusters(max_num_clusters=10, points_per_cluster=200, std_dev=10):
+    num_clusters = random.randint(3, max_num_clusters)
+    cluster_centers = []  # centers of the clusters
+    for i in range(random.randint(1, num_clusters)):
+        cluster_centers.append((random.randint(0, 200), random.randint(0, 200)))
+    points = []
+    # generate points for each cluster
+    for center in cluster_centers:
+        for _ in range(points_per_cluster):
+            point = [
+                np.random.normal(loc=center[0], scale=std_dev),
+                np.random.normal(loc=center[1], scale=std_dev),
+            ]
+            points.append(point)
+    # unzip the points into x and y coordinates
+    x, y = zip(*points)
+    return x, y
+
+
+def plot_clusters(x, y):
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x, y)
+    plt.title("2D Data Plot")
+    plt.xlabel("X Values")
+    plt.ylabel("Y Values")
+    plt.show()
+
+
+def find_clusters(X, n_clusters, rseed=2):
+    rng = np.random.RandomState(rseed)
+    i = rng.permutation(X.shape[0])[:n_clusters]
+    centers = X[i]
 
 
 def generate_tree(n):
@@ -48,14 +88,36 @@ def generate_tree_and_and_msa(n):
     t, newick_string_added_values = generate_tree(n)
     file_name_tree = "random_generated_tree.tree"
     file_name_json = "./static/test/random_generated_tree.json"
-    file_name_phy = "random_generated_tree_msa.phy"
-
-    write_pair_bracket_string_to_json(newick_string_added_values, file_name_json)
-    subprocess.call(
-        f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {file_name_phy}",
-        shell=True,
+    tree_dictionary = convert_pair_bracket_string_to_json(newick_string_added_values)
+    x, y = generate_clusters(30, len(t.get_leaves()))
+    tree_dictionary = assign_dimensionality__reduction_coordinate_tree_leaves(
+        tree_dictionary, {"x": x, "y": y}
     )
-    write_msa_to_json_format(file_name_phy)
+    write_pair_bracket_string_to_json(tree_dictionary, file_name_json)
+
+    ## subprocess.call(
+    ##     f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {file_name_phy}",
+    ##     shell=True,
+    ## )
+    ## write_msa_to_json_format(file_name_phy)
+
+
+def assign_dimensionality__reduction_coordinate_tree_leaves(
+    subtree, dimensionality_reduction_coordinates
+):
+    if "children" in subtree:
+        for child in subtree["children"]:
+            assign_dimensionality__reduction_coordinate_tree_leaves(
+                child, dimensionality_reduction_coordinates
+            )
+    else:
+        random_index = random.randint(
+            0, len(dimensionality_reduction_coordinates["x"]) - 1
+        )
+        subtree["values"]["x"] = dimensionality_reduction_coordinates["x"][random_index]
+        subtree["values"]["y"] = dimensionality_reduction_coordinates["y"][random_index]
+
+    return subtree
 
 
 def add_values_to_nodes(newick_string):
@@ -65,7 +127,7 @@ def add_values_to_nodes(newick_string):
     # Function to generate replacement string
     def replacement(match):
         # Create a string with the values
-        values = f"[bootstrap={random.randint(100,1000)}, delta={random.uniform(0,1)}]"
+        values = f"[bootstrap={random.randint(100,1000)}, delta={random.uniform(0,1)}, color='red']"
         # Return the match with the values appended
         return match.group() + values
 
@@ -76,4 +138,4 @@ def add_values_to_nodes(newick_string):
 
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(10)
+    generate_tree_and_and_msa(1000)

@@ -1,4 +1,3 @@
-
 /** Class For drawing Hierarchical Trees. */
 export default class TreeDisplay {
 
@@ -13,7 +12,7 @@ export default class TreeDisplay {
   };
 
   static sizeMap = {
-    strokeWidth: "0.5px",
+    strokeWidth: "1px",
     fontSize: "1em",
     circleSize: "1rem "// ,
   };
@@ -83,7 +82,7 @@ export default class TreeDisplay {
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("fill", "none")
       .attr("id", (d) => this.getEdgeId(d))
-      .attr("d", (d) => this.buildSvgString(d))
+      .attr("d", (d) => this.buildLinkPath(d))
       .style("stroke-opacity", 1);
 
     // UPDATE old elements present in new data.
@@ -115,7 +114,7 @@ export default class TreeDisplay {
       .enter()
       .append("path")
       .attr("class", "edge-extension")
-      .style("stroke", TreeDisplay.colorMap.extensionLinkColor)
+      .style("stroke", (d) => { return "black "})
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("stroke-dasharray", 5 + ",5")
       .attr("fill", "none")
@@ -164,9 +163,10 @@ export default class TreeDisplay {
       .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
       .text((d) => `${d.data.name}`)
       .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
+      .attr("fill", "black")
       .attr("text-anchor", (d) => this.anchorCalc(d))
       .attr("font-family", "Courier New")
-      .style("fill", (d) => this.lookUpLeafColor(d.data.name));
+    //.style("fill", (d) => this.lookUpLeafColor(d.data.name));
   }
 
   /**
@@ -281,7 +281,7 @@ export default class TreeDisplay {
       .attr("cy", (d) => d.y)
       .style("fill", TreeDisplay.colorMap.defaultColor)
       // .attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
-      .attr("r", `${TreeDisplay.sizeMap.circleSize}px`)
+      .attr("r", `${2}px`)
       .on("click", (e, d) => this.handleNodeClick(e, d))
       .on("mouseover", (e, d) => mouseOverNode(e, d))
       .on("mouseout", (e, d) => mouseLeaveNode(e, d))
@@ -420,7 +420,7 @@ export default class TreeDisplay {
    * @param  {Object} d
    * @return {string}
    */
-  buildSvgString(d) {
+  buildLinkPath(d) {
     const mx = d.source.x;
     const my = d.source.y;
 
@@ -460,9 +460,7 @@ export default class TreeDisplay {
    */
   orientText(d, currentMaxRadius) {
     const angle = (d.angle * 180) / Math.PI;
-
-    return `rotate(${angle}) translate(${currentMaxRadius}, 0) rotate(${angle < 270 && angle > 90 ? 180 : 0
-      })`;
+    return `rotate(${angle}) translate(${currentMaxRadius}, 0) rotate(${angle < 270 && angle > 90 ? 180 : 0})`;
   }
 
   anchorCalc(d) {
@@ -492,6 +490,68 @@ export default class TreeDisplay {
     return leaveColorMap[leafName] || defaultLabelColor;
   }
 
+  /**
+  * Collapses all nodes in the tree that have a depth greater than the specified depth.
+  *
+  * @param {number} depth - The depth at which to collapse the tree.
+  * @returns {void}
+  */
+  collapseToDepth(depth) {
+    const self = this; // Get a reference to your object.
+
+    this.root.each((node) => {
+      if (node.depth > depth) {
+
+        if (node.children) {
+
+          const nodeTriangle = this.getSvgContainer()
+            .selectAll(".node-collapsed")
+            .data([node], (d) => d.data.name);
+
+          nodeTriangle
+            .enter()
+            .append("path")
+            .attr("id", (d) => `triangle-${d.data.name}`)
+            .attr("class", "node-collapsed")
+            .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+            .attr("stroke", "black")
+            .attr("fill", "orange")
+            .attr("d", (d) => this.createArcPath(d))
+            .attr("transform", `rotate(${90})`)
+            .on('click', (e, d) => this.click(e, d))
+            .raise();
+
+          node.descendants().forEach((node) => {
+            if (node.collapsed) {
+              node.collapsed = false;
+              node.children = node._children;
+              node._children = null;
+              document
+                .getElementById(`triangle-${node.data.name}`)
+                .remove();
+            }
+          });
+
+          node._children = node.children;
+          node.children = null;
+
+        }
+      } else {
+        if (node._children) {
+          node.children = node._children;
+          node._children = null;
+        }
+      }
+    });
+
+    // Update the tree after collapsing nodes
+    this.updateEdges();
+    this.updateExternalEdges();
+    this.updateLeaveLabels();
+    this.updateNodeCircles();
+
+  }
+
   collapse(d) {
 
     const self = this; // Get a reference to your object.
@@ -506,17 +566,60 @@ export default class TreeDisplay {
     }
   }
 
+  createArcPath(d) {
+    let leaves = d.leaves();
+
+    leaves.sort(function (a, b) {
+      return a.angle - b.angle;
+    })
+
+    // Use d3's arc generator to create the path
+    let arcGenerator = d3.arc()
+      .innerRadius(d.radius)
+      .outerRadius(this.currentMaxRadius)
+      .startAngle(leaves[0].angle)
+      .endAngle(leaves[leaves.length - 1].angle)
+      .padAngle(0);
+
+    return arcGenerator();
+  }
+
+
   createTrianglePath(d) {
-    let children = d.children;
-    children.sort(function (a, b) {
+
+    let leaves = d.leaves();
+
+    leaves.sort(function (a, b) {
       return a.angle - b.angle
     })
+
     let path = d3.path();
     path.moveTo(d.x, d.y);
-    path.lineTo(children[0].x, children[0].y);
-    path.lineTo(children[children.length - 1].x, children[children.length - 1].y);
+    path.lineTo((this.currentMaxRadius) * Math.cos(leaves[0].angle), (this.currentMaxRadius) * Math.sin(leaves[0].angle));
+    path.lineTo((this.currentMaxRadius) * Math.cos(leaves[leaves.length - 1].angle), (this.currentMaxRadius) * Math.sin(leaves[leaves.length - 1].angle));
     path.closePath();
     return path.toString();
+
+  }
+
+  decollapseInitial(d) {
+    d.descendants().forEach((node) => {
+      if (node.collapsed) {
+        node.collapsed = false;
+        node.children = node._children;
+        node._children = null;
+        document
+          .getElementById(`triangle-${node.data.name}`)
+          .remove();
+      }
+    });
+
+    this.updateEdges();
+    this.updateExternalEdges();
+    this.updateLeaveLabels();
+    this.updateNodeCircles();
+
+
   }
 
   click(e, d) {
@@ -535,8 +638,8 @@ export default class TreeDisplay {
         .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
         .attr("stroke", "black")
         .attr("fill", "orange")
-        .attr("filter", "drop-shadow(0px 3px 3px rgba(0, 0, 0, 1))")
-        .attr("d", (d) => this.createTrianglePath(d))
+        .attr("d", (d) => this.createArcPath(d))
+        .attr("transform", `rotate(${90})`)
         .on('click', (e, d) => this.click(e, d))
         .raise();
 
@@ -626,7 +729,10 @@ export default class TreeDisplay {
         this.setToEdgesToColor();
       }
       this.updateEdgeValues(options.displayEdgeValue);
+      this.collapseToDepth(100)
     }
+
+
   }
 
   setToEdgesToColor() {
@@ -693,7 +799,9 @@ export default class TreeDisplay {
   set leaveColorMap(value) {
     this._leaveColorMap = value;
   }
+
 }
+
 
 export class TreeMathUtils {
 
@@ -855,3 +963,4 @@ function mouseLeaveNode(e, d) {
     .remove();
 
 }
+

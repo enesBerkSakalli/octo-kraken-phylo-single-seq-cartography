@@ -231,12 +231,14 @@ export default function constructTree(tree, ignoreBranchLengths, container, opti
     width = options['width'];
   }
 
+
   // Get the height of the container. If 'height' is specified in options, use it instead
   let height = applicationContainer.clientHeight;
   if ('height' in options) {
     height = options['height'];
   }
 
+ 
   // Calculate the margin for the container. It is 20% of the smaller dimension of the container
   // If 'margin' is specified in options, use it instead
   let margin = width < height ? width * 0.20 : height * 0.20;

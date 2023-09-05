@@ -1,7 +1,6 @@
 import re
 import random
 import json
-import pprint
 
 
 # Function to parse a node from a Newick string
@@ -73,6 +72,7 @@ def pair_bracket_to_json(pair_bracket_string):
 
     # If the string does not contain any opening curved brackets
     if "(" not in pair_bracket_string:
+        length = 1
         # If the string contains only one element when split by semicolons outside brackets
         if len(split_on_semicolons_outside_brackets(pair_bracket_string)) == 1:
             # If the string does not contain any colons
@@ -88,7 +88,14 @@ def pair_bracket_to_json(pair_bracket_string):
                 label = pair_bracket_string[: pair_bracket_string.find(":")]
                 leaf_values = extract_values_in_brackets_as_dict(label)
                 # The length is the part of the string after the first colon, converted to a float
-                length = float(pair_bracket_string[pair_bracket_string.find(":") + 1 :])
+
+                if label.find(":") != -1:
+                    length = float(
+                        pair_bracket_string[pair_bracket_string.find(":") + 1 :]
+                    )
+                else:
+                    print(pair_bracket_string)
+
                 # Remove the values from the label
                 label = remove_square_brackets(label)
 
@@ -236,16 +243,20 @@ def transform_tree_file_to_json_file(input_file_name, destination_file_name):
 
 
 # Function to write a Newick string to a JSON file
-def write_pair_bracket_string_to_json(pair_bracket_string, file_name):
+def convert_pair_bracket_string_to_json(pair_bracket_string):
     # Convert the Newick string to a JSON object
     newick_json = pair_to_json_encoded(pair_bracket_string)
     # Convert the JSON object to a string
-    json_tree = json.dumps(newick_json, indent=4)
+    return newick_json
     # Open the file
+
+
+# Function to write a Newick string to a JSON file
+def write_pair_bracket_string_to_json(json_tree, file_name):
+    json_tree = json.dumps(json_tree, indent=4)
     with open(file_name, "w") as f:
         # Write the JSON string to the file
         f.write(json_tree)
-
 
 # Function to convert a Newick string to a JSON object
 def pair_to_json_encoded(pair_bracket_string):
@@ -366,12 +377,116 @@ def read_newick_file(filename):
 
     return data
 
+
 def write_json(data, filename):
     try:
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
     except Exception as e:
         print(f"An error occurred: {e}")
+
+
+def collapse_nodes(tree, group_property):
+    # Base case: If the node is a leaf, return the group it belongs to
+    if "children" not in tree:
+        return tree["values"].get(group_property, None)
+
+    # Recursive case: First collapse the children
+    child_groups = [collapse_nodes(child, group_property) for child in tree["children"]]
+
+    # If all children belong to the same group, collapse them
+    if len(set(child_groups)) == 1:
+        tree["children"] = [
+            {
+                "name": "Collapsed Group",
+                "values": {group_property: child_groups[0]},
+            }
+        ]
+
+    return tree["values"].get(group_property, None)
+
+
+def calculate_average_depth(node, depth=0):
+    if "children" not in node:
+        # If the node is a leaf, its contribution to the total depth is just its own depth
+        return depth, 1
+
+    total_depth = 0
+    total_nodes = 0
+    for child in node["children"]:
+        child_depth, child_nodes = calculate_average_depth(child, depth + 1)
+        total_depth += child_depth
+        total_nodes += child_nodes
+
+    # The contribution of an internal node to the total depth is its own depth plus the total depth of its children
+    return total_depth + depth, total_nodes + 1
+
+
+def average_depth(tree):
+    total_depth, total_nodes = calculate_average_depth(tree)
+    return total_depth / total_nodes
+
+
+def calculate_depths(node, depth=0):
+    if "children" not in node:
+        # If the node is a leaf, return its depth
+        return [depth]
+
+    # If the node is not a leaf, recursively calculate the depths of the children
+    depths = []
+    for child in node["children"]:
+        depths.extend(calculate_depths(child, depth + 1))
+
+    return depths
+
+
+def median_depth(tree):
+    depths = calculate_depths(tree)
+    depths.sort()
+
+    n = len(depths)
+    if n % 2 == 1:
+        # If the number of depths is odd, the median is the middle value
+        return depths[n // 2]
+    else:
+        # If the number of depths is even, the median is the average of the two middle values
+        return (depths[n // 2 - 1] + depths[n // 2]) / 2
+
+
+def third_quantile_depth(tree):
+    depths = calculate_depths(tree)
+    depths.sort()
+
+    n = len(depths)
+    # Compute the index of the third quantile
+    index = n * 3 // 4
+    if n * 3 % 4 == 0:
+        # If the index is an integer, the third quantile is a value in the list
+        return depths[index]
+    else:
+        # If the index is not an integer, the third quantile is interpolated
+        return (depths[index] + depths[index + 1]) / 2
+
+
+from collections import Counter
+
+
+def mode_depth(tree):
+    depths = calculate_depths(tree)
+
+    # Count the occurrences of each depth
+    counter = Counter(depths)
+
+    # Find the depth(s) that occur(s) most often
+    max_count = max(counter.values())
+    modes = [depth for depth, count in counter.items() if count == max_count]
+
+    # If there is a single mode, return it
+    if len(modes) == 1:
+        return modes[0]
+
+    # If there are multiple modes, return a list of them
+    return modes
 
 
 if __name__ == "__main__":
@@ -381,15 +496,21 @@ if __name__ == "__main__":
     # pair_bracket_dictionary = pair_to_json_encoded(pair_bracket_string)
     # delete_nodes_under_threshold(pair_bracket_dictionary, "p_value", 0.06)
     # pp.pprint(pair_bracket_dictionary)
-
-    newick_string = read_newick_file(
-        "./data/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.nwk"
-    )
-    
+    #  newick_string = read_newick_file(
+    #      "./data/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.nwk"
+    #  )
+    newick_string = "(((((A[&type=alpha]:[p_value=0.0001]1,B[&type=alpha]:1),(E[&type=beta]:1, G[&type=beta]:1)):2),(O1:[&type=out],O2[&type=out]:1)),(C[&type=epsilon]:1,D[&type=epsilon]:1));"
     pair_bracket_dictionary = pair_to_json_encoded(newick_string)
-
+    pair_bracket_dictionary["median_depth"] = median_depth(pair_bracket_dictionary)
+    pair_bracket_dictionary["average_depth"] = average_depth(pair_bracket_dictionary)
     write_json(
         pair_bracket_dictionary,
         "./static/test/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.json",
     )
-
+    med_depth = median_depth(pair_bracket_dictionary)
+    print(f"The median depth of the tree is {med_depth}.")
+    print(f"The average depth of the tree is {average_depth(pair_bracket_dictionary)}")
+    print(
+        f"The average depth of the tree is {third_quantile_depth(pair_bracket_dictionary)}"
+    )
+    print(f"The average depth of the tree is {mode_depth(pair_bracket_dictionary)}")

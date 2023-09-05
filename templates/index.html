@@ -48,7 +48,9 @@
         <li>
           <a href="#" id="save-tree-button"><span class="uk-margin-small-right" uk-icon="icon: camera"></span>Save</a>
         </li>
-
+        <li>
+          <a href="#modal-dim-plot" uk-toggle><span class="uk-margin-small-right" uk-icon="icon: camera"></span>Save</a>
+        </li>
       </ul>
 
       <ul id="branch-values-vector" class="uk-nav uk-nav-sub">
@@ -97,9 +99,9 @@
       </ul>
     </div>
 
-    <div id="modal-sections" class="uk-modal-full" uk-modal>
+    <div id="modal-sections" class="uk-modal" uk-modal>
 
-      <div class="uk-modal-dialog" uk-overflow-auto>
+      <div class="uk-modal-dialog">
 
         <button class="uk-modal-close-default" type="button" uk-close></button>
 
@@ -119,6 +121,16 @@
 
       </div>
 
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div id="modal-dim-plot" class="uk-modal-full" uk-modal>
+      <div class="uk-modal-dialog">
+        <button class="uk-modal-close-full uk-close-large" type="button" uk-close></button>
+        <canvas id="scatterChart" width="200" height="150"></canvas>
+      </div>
     </div>
 
     <!-- This is the beginning of the Color Section-->
@@ -189,7 +201,7 @@
         d3.select('#application').attr("transform", `translate(${width / 2}, ${height / 2})` + "rotate(" + e.target.value + ")");
       });
 
-      d3.json("../static/test/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.json")
+      d3.json("../static/test/random_generated_tree.json")
         .then((data) => {
 
           d3.json("../static/test/random_generated_tree_msa.json")
@@ -199,17 +211,25 @@
                 'transform', `translate(${width / 2}, ${height / 2})`
               );
 
+
+              let median_depth = data.median_depth;
+              let average_depth = data.average_depth;
+
+
+
               let tree = constructTree(data, false, 'application-container');
-
               leafColorMap = initializeLeafColorMap(tree.leaves());
-
               treeDisplay = new TreeDisplay(tree, tree.maxRadius, 'application');
+
+              plot_dimension_reduction_plot(tree);
+
 
               treeDisplay.updateDisplay({
                 'leaveColorMap': leafColorMap,
                 'msaMatrix': msa,
+                'medianDepth': median_depth,
+                'averageDepth': average_depth,
               });
-
 
               ModalColorArray(tree);
               // Instantiate the ColorSelector class and call the init method
@@ -560,6 +580,41 @@
         return elementContainer;
       }
 
+
+      // Plot as Cluster
+      function plot_dimension_reduction_plot(tree) {
+        // Select the SVG element where the scatter plot will be drawn
+        let leaves = tree.leaves();
+        const xValues = leaves.map(leaf => leaf.data.values.x);
+        const yValues = leaves.map(leaf => leaf.data.values.y);
+
+        const ctx = document.getElementById('scatterChart').getContext('2d');
+        const scatterChart = new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [{
+              label: 'Scatter Plot',
+              data: xValues.map((x, i) => ({ x, y: yValues[i] })),
+              backgroundColor: 'black'
+            }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            width: 800, // Set the desired width
+            height: 600, // Set the desired height
+            scales: {
+              x: {
+                type: 'linear',
+                position: 'bottom'
+              },
+              y: {
+                type: 'linear',
+                position: 'left'
+              }
+            }
+          }
+        });
+      }
     </script>
 </body>
 
