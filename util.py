@@ -17,21 +17,27 @@ from sklearn.cluster import KMeans
 
 def generate_clusters(max_num_clusters=10, points_per_cluster=200, std_dev=10):
     num_clusters = random.randint(3, max_num_clusters)
+
     cluster_centers = []  # centers of the clusters
+
     for i in range(random.randint(1, num_clusters)):
-        cluster_centers.append((random.randint(0, 200), random.randint(0, 200)))
+        cluster_centers.append((random.randint(0, 200), random.randint(0, 200), i))
+
     points = []
     # generate points for each cluster
+
     for center in cluster_centers:
         for _ in range(points_per_cluster):
             point = [
                 np.random.normal(loc=center[0], scale=std_dev),
                 np.random.normal(loc=center[1], scale=std_dev),
+                np.random.normal(loc=center[1], scale=std_dev),
+                center[2],                
             ]
             points.append(point)
-    # unzip the points into x and y coordinates
-    x, y = zip(*points)
-    return x, y
+
+    x, y, z, center = zip(*points)
+    return x, y, z, center
 
 
 def plot_clusters(x, y):
@@ -66,7 +72,7 @@ def generate_tree(n):
 
     with open(f"{file_name}", "w") as f:
         newick_string = t.write(format=1)
-        newick_string_added_values = add_values_to_nodes(newick_string)
+        newick_string_added_values = newick_string  # add_values_to_nodes(newick_string)
         f.write(t.write(format=1))
     return t, newick_string_added_values
 
@@ -89,10 +95,15 @@ def generate_tree_and_and_msa(n):
     file_name_tree = "random_generated_tree.tree"
     file_name_json = "./static/test/random_generated_tree.json"
     tree_dictionary = convert_pair_bracket_string_to_json(newick_string_added_values)
-    x, y = generate_clusters(30, len(t.get_leaves()))
+    x, y, z, centers = generate_clusters(80, len(t.get_leaves()))
     tree_dictionary = assign_dimensionality__reduction_coordinate_tree_leaves(
-        tree_dictionary, {"x": x, "y": y}
+        tree_dictionary, {"x": x, "y": y, "z": z, "group": centers}
     )
+
+    groups = list(set(centers))
+    tree_dictionary['groups'] = groups
+    print(tree_dictionary)
+
     write_pair_bracket_string_to_json(tree_dictionary, file_name_json)
 
     ## subprocess.call(
@@ -116,7 +127,10 @@ def assign_dimensionality__reduction_coordinate_tree_leaves(
         )
         subtree["values"]["x"] = dimensionality_reduction_coordinates["x"][random_index]
         subtree["values"]["y"] = dimensionality_reduction_coordinates["y"][random_index]
-
+        subtree["values"]["z"] = dimensionality_reduction_coordinates["z"][random_index]
+        subtree["values"]["group"] = dimensionality_reduction_coordinates["group"][
+            random_index
+        ]
     return subtree
 
 
@@ -138,4 +152,4 @@ def add_values_to_nodes(newick_string):
 
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(1000)
+    generate_tree_and_and_msa(500)

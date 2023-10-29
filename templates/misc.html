@@ -1,0 +1,469 @@
+  <!--
+    <script type="module">
+      import Gui from "../static/js/gui.js";
+      import constructTree from "../static/js/TreeConstructor.js";
+      import TreeDisplay from "../static/js/TreeDisplay.js";
+
+      
+      //================================================= Properties =======================================================
+      let gui = new Gui();
+      let applicationContainer = document.getElementById("application-container");
+      let width = applicationContainer.clientWidth;
+      let height = applicationContainer.clientHeight;
+      let leafColorMap = {};
+      let groupColorMap = {};
+      let treeDisplay;
+      //================================================= Main =======================================================
+      document.getElementById('font-size-slider').addEventListener('change', (e) => {
+        treeDisplay.updateDisplay({
+          'fontSize': e.target.value,
+        });
+      });
+      document.getElementById('stroke-width-slider').addEventListener('change', (e) => {
+        treeDisplay.updateDisplay({
+          'strokeWidth': e.target.value,
+        });
+      });
+      document.getElementById('stroke-width-slider').addEventListener('change', (e) => {
+        treeDisplay.updateDisplay({
+          'strokeWidth': e.target.value,
+        });
+      });
+
+      document.getElementById('mode-selector').addEventListener('change', (e) => {
+        // Get the select element by its ID
+        var selectElement = document.getElementById('mode-selector');
+        // Get the selected value
+        let selectedModel = selectElement.value;
+        treeDisplay.updateDisplay({
+          'mode': selectedModel
+        });
+      });
+
+      document.getElementById('mode-selector').addEventListener('change', (e) => {
+        // Get the select element by its ID
+        var selectElement = document.getElementById('color-mode-selector');
+        // Get the selected value
+        let selectedModel = selectElement.value;
+        treeDisplay.updateDisplay({
+          'colorMode': selectedModel
+        });
+      });
+
+      document.getElementById('rotate-tree-slider').addEventListener('input', (e) => {
+        d3.select('#application').attr("transform", `translate(${width / 2}, ${height / 2})` + "rotate(" + e.target.value + ")");
+      });
+
+      d3.json("../static/test/random_generated_tree.json")
+        .then((data) => {
+
+          d3.json("../static/test/random_generated_tree_msa.json")
+            .then((msa) => {
+
+              d3.select("#application").attr(
+                'transform', `translate(${width / 2}, ${height / 2})`
+              );
+
+              let median_depth = data.median_depth;
+              let average_depth = data.average_depth;
+
+              let tree = constructTree(data, false, 'application-container');
+              leafColorMap = initializeLeafColorMap(tree.leaves());
+              treeDisplay = new TreeDisplay(tree, tree.maxRadius, 'application');
+
+              plot_dimension_reduction_plot(tree);
+
+
+              treeDisplay.updateDisplay({
+                'leaveColorMap': leafColorMap,
+                'msaMatrix': msa,
+                'medianDepth': median_depth,
+                'averageDepth': average_depth,
+              });
+
+              ModalColorArray(tree);
+              // Instantiate the ColorSelector class and call the init method
+              setZoom();
+              handleDataOptionsList(tree, leafColorMap);
+
+              document.getElementById('save-tree-button').addEventListener('click', (e) => {
+                gui.saveSVG();
+              });
+
+            });
+        });
+
+      //================================================= Functions =======================================================
+
+      /**
+       * Handles the generation and placement of the list item for data options.
+       * Fetches data options, creates a new list item with these options,
+       * adds the created item to the branch values vector, 
+       * and sets up a listener for changes on the branch value selector.
+       *
+       * @param {Object} tree - The tree object from which to derive data options.
+       * @param {Object} leafColorMap - The color map for leaf nodes in the tree.
+       * @return {void}
+       */
+      function handleDataOptionsList(tree, leafColorMap) {
+        // Extract data options from the tree.
+        let dataOptions = getDataOptions(tree);
+
+        // Create a new list item with the extracted data options.
+        let listItem = createListItem(dataOptions);
+
+        // Add the new list item to the branch values vector.
+        addToBranchValuesVector(listItem);
+
+        // Setup a listener for changes on the branch value selector.
+        addBranchValueSelectorListener(tree, leafColorMap);
+      }
+
+      /**
+       * Extracts data options from the tree and adds the 'length' option.
+       * 
+       * @param {Object} tree - The tree data.
+       * @return {Array} The array of data options.
+       */
+      function getDataOptions(tree) {
+        let { values = {} } = tree.data;
+        let dataOptionsArray = Object.keys(values);
+        dataOptionsArray.push('length');
+
+        return dataOptionsArray;
+      }
+
+      /**
+      * Creates the HTML for an option element.
+      * 
+      * @param {string} optionValue - The value for the option.
+      * @return {string} The option HTML string.
+     */
+      function createOptionElement(optionValue) {
+        return `<option>${optionValue}</option>`;
+      }
+
+      /**
+       * Creates and returns a new list item element.
+       * 
+       * @param {Array} dataOptions - The data options for the list.
+       * @return {Object} The created list item element.
+       */
+      function createListItem(dataOptions) {
+        let li = document.createElement("li");
+        let options = dataOptions.map(createOptionElement).join('');
+
+        li.innerHTML = `<div class="uk-margin">
+                    <div class="uk-form-controls">
+                      <select id="selector-option-branch-value" class="uk-select" id="form-stacked-select">
+                        <option></option>
+                        ${options}
+                      </select>
+                    </div>
+                  </div>`;
+
+        return li;
+      }
+
+      /**
+      * Adds the list item to the branch values vector.
+      * @param {Object} li - The list item element.
+      */
+      function addToBranchValuesVector(li) {
+        let branchValuesVector = document.getElementById("branch-values-vector");
+        branchValuesVector.appendChild(li);
+      }
+
+      /**
+       * Adds the change event listener to the branch value selector.
+       * 
+       * @param {Object} tree - The tree data.
+       * @param {Object} leafColorMap - The leaf color map.
+       */
+      function addBranchValueSelectorListener(tree, leafColorMap) {
+        document.getElementById('selector-option-branch-value').addEventListener('change', (e) => {
+
+          treeDisplay.updateDisplay({
+            'displayEdgeValue': e.target.value,
+          })
+
+        });
+      }
+
+      function getLeaveColor(leaves) {
+        let colorMap = {};
+        leaves.forEach((leave) => {
+          let name = leave.data.name;
+          let color = document.getElementById(`taxa-${name}`).value;
+          colorMap[name] = color;
+        });
+        return colorMap;
+      }
+
+      function getGroupColor() {
+        let colorMap = {};
+        document.querySelectorAll(".group-color").forEach((element) => {
+          colorMap[element.dataset.group] = element.value;
+        });
+        return colorMap;
+      }
+
+      function zoomed({ transform }) {
+        let xZoomedTransform = (width / 2) + (transform.x / 2);
+        let yZoomedTransform = (height / 2) + (transform.y / 2);
+        d3.select('#application').attr("transform", `translate(${xZoomedTransform}, ${yZoomedTransform})` + "scale(" + transform.k + ")");
+      }
+
+      function accessLeaveNames(leaves) {
+        return leaves.map((leave) => { return leave.data.name; });
+      }
+
+      function groupLeaves(leaves, separator) {
+        let groups = new Set();
+
+        if (separator == "first") {
+
+          leaves.forEach((leave) => {
+            groups.add(leave.data.name[0]);
+          });
+
+        } else {
+
+          leaves.forEach((leave) => {
+            let group = leave.data.name.split(separator);
+            groups.add(group[0]);
+          });
+
+        }
+
+        return groups;
+
+      }
+
+      function setZoom() {
+        d3.select('#application-container').call(
+          d3.zoom().on("zoom", zoomed)
+        );
+      }
+
+      function initializeLeafColorMap(leaves) {
+        let colorMap = {};
+        leaves.forEach((leave) => {
+          let name = leave.data.name;
+          colorMap[name] = "#00000";
+        });
+        return colorMap;
+      }
+
+      /**
+     * This function is used to convert a groupColorMap into a leaveColorMap.
+     * It iterates over the leaves and extracts the group of each leaf based on the provided separator.
+     * It then assigns the color of that group to the leaf in the new color map.
+     * 
+     * @param {Object} groupColorMap - The map of group names to colors.
+     * @param {Array} leaves - An array of leaf nodes from the tree.
+     * @param {String} separator - The character(s) that separates group name from the rest of the leaf name. 
+     *                             If "first", the first character of the leaf name is used as the group name.
+     * 
+     * @return {Object} colorMap - A map of leaf names to colors.
+     */
+      function convertGroupColorMapToLeafColorMap(groupColorMap, leaves, separator) {
+        let colorMap = {};
+
+        leaves.forEach((leaf) => {
+          let leafName = leaf.data.name;
+          let groupName;
+
+          if (separator === "first") {
+            groupName = leafName[0];
+          } else {
+            groupName = leafName.split(separator)[0];
+          }
+
+          let groupColor = groupColorMap[groupName];
+          colorMap[leafName] = groupColor;
+        });
+
+        return colorMap;
+      }
+
+      //================================================= Components =======================================================
+      function SelectorColoringMode() {
+        return ` 
+        <div >
+          <select id="coloring-mode-selector" aria-label="Custom controls">
+            <option value="1">Taxa</option>
+            <option value="2">Groups</option>
+          </select>
+        </div>`
+      }
+
+      function ModalColorArray(root) {
+        let leaves = root.leaves();
+
+        document.getElementById("color-section").innerHTML = `
+        <div id="color-selection-modal" uk-modal container="color-section">
+          <div class="uk-modal-dialog uk-modal-body">
+              <div class="uk-child-width-1-3@s uk-grid-small uk-text-center" uk-grid>
+                ${SelectorColoringMode()}   
+                <div id="separator-selector-container" class="uk-tile uk-tile-default uk-padding-remove"></div>
+                <div id="group-button" class="uk-tile uk-tile-default uk-padding-remove"></div>
+            </div>
+
+            <div id="color-array-container" class="uk-child-width-1-3@s uk-grid-small uk-text-center" uk-grid>
+                ${TaxaColorArray(accessLeaveNames(leaves))}
+            </div>
+            
+            <div id="color-array-container" class="uk-child-width-1-3@s uk-grid-small uk-text-center" uk-grid>
+                ${ApplyColorButton()}  
+            </div>
+
+          </div>
+        </div>`;
+
+        document.getElementById("button-row").innerHTML = AssignColorButton();
+
+        document.getElementById("coloring-mode-selector").addEventListener("change", (event) => {
+
+          if (event.target.value == 1) {
+            document.getElementById("color-array-container").innerHTML = TaxaColorArray(accessLeaveNames(leaves));
+            document.getElementById("separator-selector-container").innerHTML = ``;
+            document.getElementById("group-button").innerHTML = ``;
+          }
+
+          if (event.target.value == 2) {
+
+            document.getElementById("separator-selector-container").innerHTML = SeparatorSelector();
+            document.getElementById("group-button").innerHTML = GroupBySeparatorSelectorButton();
+            document.getElementById("group-button").addEventListener("click", (e) => {
+              let separator = document.getElementById("separator-select-button").value;
+              let group = groupLeaves(leaves, separator);
+              document.getElementById("color-array-container").innerHTML = GroupColorArray(group);
+            });
+
+          }
+        },
+          false
+        );
+
+        document.getElementById("apply-color-button").addEventListener("click", (e) => {
+
+          if (document.getElementById("coloring-mode-selector").value == 1) {
+            leafColorMap = getLeaveColor(leaves);
+          } else {
+            groupColorMap = getGroupColor();
+            leafColorMap = convertGroupColorMapToLeafColorMap(groupColorMap, leaves, document.getElementById('separator-select-button').value);
+          }
+
+          treeDisplay.updateDisplay({
+            'leaveColorMap': leafColorMap,
+          });
+
+        });
+
+      }
+
+      function AssignColorButton() {
+        return `<a id="color-group-action" href="#" uk-toggle="target: #color-selection-modal">
+                  <span class="uk-margin-small-right" uk-icon="icon: paint-bucket"></span> Assign Colors
+                </a>`;
+      }
+
+      function ApplyColorButton() {
+        return `<div id="apply-color-button" class="uk-button uk-button-default">
+                  Apply  
+                </div>`
+      }
+
+      function GroupBySeparatorSelectorButton() {
+        return `<div class="form-group row py-2">
+                  <div class="col p-0">
+                      <a href="#" id="group-button" class="uk-button uk-button-default">
+                          Group
+                      </a>
+                  </div>
+                </div>`
+      }
+
+      function SeparatorSelector() {
+        return `<div class='button-container'">
+                        <select id="separator-select-button" aria-label="Custom controls" name="separator">
+                            <option value="-">-</option>
+                            <option value="_">Underscore</option>
+                            <option value="first">First Letter</option>
+                        </select>
+                    </div>
+                `
+      }
+
+      function GroupColorArray(elements) {
+        let elementContainer = "";
+        elements.forEach((element) => {
+          elementContainer += `
+                <div class="uk-tile uk-tile-default uk-padding-remove">
+                    <div>
+                        ${element}
+                    </div>
+                    <div>
+                        <input id="group-${element}" type="color" name="group-color-${element}" value=""#000000" class="group-color" data-group="${element}">
+                    </div>
+                </div>
+                    `;
+        });
+        return elementContainer;
+      }
+
+      function TaxaColorArray(elements) {
+        let elementContainer = "";
+        elements.forEach((element) => {
+          elementContainer += `
+                <div class="uk-tile uk-tile-default uk-padding-remove">
+                    <div>
+                        ${element}
+                    </div>
+                    <div>
+                        <input id="taxa-${element}" type="color" name="taxa-color-${element}" value="#000000">
+                    </div>
+                </div>
+                    `;
+        });
+        return elementContainer;
+      }
+
+
+      // Plot as Cluster
+      function plot_dimension_reduction_plot(tree) {
+        // Select the SVG element where the scatter plot will be drawn
+        let leaves = tree.leaves();
+        const xValues = leaves.map(leaf => leaf.data.values.x);
+        const yValues = leaves.map(leaf => leaf.data.values.y);
+
+        const ctx = document.getElementById('scatterChart').getContext('2d');
+        const scatterChart = new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [{
+              label: 'Scatter Plot',
+              data: xValues.map((x, i) => ({ x, y: yValues[i] })),
+              backgroundColor: 'black'
+            }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            width: 800, // Set the desired width
+            height: 600, // Set the desired height
+            scales: {
+              x: {
+                type: 'linear',
+                position: 'bottom'
+              },
+              y: {
+                type: 'linear',
+                position: 'left'
+              }
+            }
+          }
+        });
+      }
+    </script>
+    -->

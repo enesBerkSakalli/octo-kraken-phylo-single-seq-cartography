@@ -21,22 +21,15 @@
                                         {
                                             "name": "A",
                                             "length": 1,
-                                            "values": {
-                                                "&type": "alpha"
-                                            }
+                                            "values": {}
                                         },
                                         {
                                             "name": "B",
                                             "length": 1,
-                                            "values": {
-                                                "&type": "alpha"
-                                            }
+                                            "values": {}
                                         }
                                     ],
-                                    "values": {
-                                        "&type": "alpha",
-                                        "p_value": 0.0001
-                                    }
+                                    "values": {}
                                 },
                                 {
                                     "name": "",
@@ -45,33 +38,21 @@
                                         {
                                             "name": "E",
                                             "length": 1,
-                                            "values": {
-                                                "&type": "beta"
-                                            }
+                                            "values": {}
                                         },
                                         {
-                                            "name": " G",
+                                            "name": "G",
                                             "length": 1,
-                                            "values": {
-                                                "&type": "beta"
-                                            }
+                                            "values": {}
                                         }
                                     ],
-                                    "values": {
-                                        "&type": "beta"
-                                    }
+                                    "values": {}
                                 }
                             ],
-                            "values": {
-                                "&type": "beta",
-                                "p_value": 0.0001
-                            }
+                            "values": {}
                         }
                     ],
-                    "values": {
-                        "&type": "beta",
-                        "p_value": 0.0001
-                    }
+                    "values": {}
                 },
                 {
                     "name": "",
@@ -85,20 +66,13 @@
                         {
                             "name": "O2",
                             "length": 1,
-                            "values": {
-                                "&type": "out"
-                            }
+                            "values": {}
                         }
                     ],
-                    "values": {
-                        "&type": "out"
-                    }
+                    "values": {}
                 }
             ],
-            "values": {
-                "&type": "out",
-                "p_value": 0.0001
-            }
+            "values": {}
         },
         {
             "name": "",
@@ -107,27 +81,16 @@
                 {
                     "name": "C",
                     "length": 1,
-                    "values": {
-                        "&type": "epsilon"
-                    }
+                    "values": {}
                 },
                 {
                     "name": "D",
                     "length": 1,
-                    "values": {
-                        "&type": "epsilon"
-                    }
+                    "values": {}
                 }
             ],
-            "values": {
-                "&type": "epsilon"
-            }
+            "values": {}
         }
     ],
-    "values": {
-        "&type": "epsilon",
-        "p_value": 0.0001
-    },
-    "median_depth": 4.0,
-    "average_depth": 2.9375
+    "values": {}
 }

@@ -114,7 +114,7 @@ export default class TreeDisplay {
       .enter()
       .append("path")
       .attr("class", "edge-extension")
-      .style("stroke", (d) => { return "black "})
+      .style("stroke", (d) => { return "black " })
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("stroke-dasharray", 5 + ",5")
       .attr("fill", "none")

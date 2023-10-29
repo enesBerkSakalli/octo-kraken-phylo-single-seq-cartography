@@ -79,10 +79,8 @@ def pair_bracket_to_json(pair_bracket_string):
             if ":" not in pair_bracket_string:
                 # The entire string is the label
                 label = pair_bracket_string
-
                 # There is no length
                 length = None
-
             else:
                 # The label is the part of the string before the first colon
                 label = pair_bracket_string[: pair_bracket_string.find(":")]
@@ -94,8 +92,8 @@ def pair_bracket_to_json(pair_bracket_string):
                         pair_bracket_string[pair_bracket_string.find(":") + 1 :]
                     )
                 else:
-                    print(pair_bracket_string)
-
+                    pass                    
+                
                 # Remove the values from the label
                 label = remove_square_brackets(label)
 
@@ -257,6 +255,7 @@ def write_pair_bracket_string_to_json(json_tree, file_name):
     with open(file_name, "w") as f:
         # Write the JSON string to the file
         f.write(json_tree)
+
 
 # Function to convert a Newick string to a JSON object
 def pair_to_json_encoded(pair_bracket_string):
@@ -499,18 +498,10 @@ if __name__ == "__main__":
     #  newick_string = read_newick_file(
     #      "./data/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.nwk"
     #  )
-    newick_string = "(((((A[&type=alpha]:[p_value=0.0001]1,B[&type=alpha]:1),(E[&type=beta]:1, G[&type=beta]:1)):2),(O1:[&type=out],O2[&type=out]:1)),(C[&type=epsilon]:1,D[&type=epsilon]:1));"
+
+    newick_string = "(((((A:1,B:1),(E:1,G:1)):2),(O1:,O2:1)),(C:1,D:1));"
     pair_bracket_dictionary = pair_to_json_encoded(newick_string)
-    pair_bracket_dictionary["median_depth"] = median_depth(pair_bracket_dictionary)
-    pair_bracket_dictionary["average_depth"] = average_depth(pair_bracket_dictionary)
     write_json(
         pair_bracket_dictionary,
         "./static/test/alignment_obj_hvg_genewisenormed_splicedinfo.fasta.treefile_extended.json",
     )
-    med_depth = median_depth(pair_bracket_dictionary)
-    print(f"The median depth of the tree is {med_depth}.")
-    print(f"The average depth of the tree is {average_depth(pair_bracket_dictionary)}")
-    print(
-        f"The average depth of the tree is {third_quantile_depth(pair_bracket_dictionary)}"
-    )
-    print(f"The average depth of the tree is {mode_depth(pair_bracket_dictionary)}")

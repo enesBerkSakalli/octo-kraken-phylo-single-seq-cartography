@@ -199,6 +199,7 @@ export class TreeConstructor {
   calcScale(minWindowSize, maxRadius, factor) {
     return minWindowSize / factor / maxRadius;
   }
+    
 }
 
 /**
@@ -257,5 +258,5 @@ export default function constructTree(tree, ignoreBranchLengths, container, opti
   root_.maxRadius = treeConstructor.getMaxRadius(root_);
 
   // Return the root node of the constructed tree
-  return root_
+  return root_;
 }
