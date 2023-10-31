@@ -152,4 +152,4 @@ def add_values_to_nodes(newick_string):
 
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(500)
+    generate_tree_and_and_msa(900)

@@ -6,7 +6,23 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { Universe } from './Cosmos.js';
 
+function clean(scene) {
+
+    const meshes = [];
+
+    scene.traverse(function (object) {
+        if (object.isMesh) meshes.push(object);
+    });
+
+    for (let i = 0; i < meshes.length; i++) {
+        const mesh = meshes[i];
+        mesh.material.dispose();
+        mesh.geometry.dispose();
+        scene.remove(mesh);
+    }
+}
 
 function calculateBoundingBox(data) {
     const bbox = new THREE.Box3();
@@ -22,7 +38,6 @@ function calculateBoundingBox(data) {
 
     return bbox;
 }
-
 
 export function makeInstanced(geometry, leaves, scene, leavesMeshArray, colorScale) {
     const bbox = calculateBoundingBox(leaves);
@@ -68,5 +83,94 @@ export function makeInstanced(geometry, leaves, scene, leavesMeshArray, colorSca
         leavesMeshArray.push(mesh);
         scene.add(mesh);
     }
+
+    return leavesMeshArray;
 }
 
+export function initializeDimensionalityReductionPlot(cosmos, leaves, colorScale) {
+    let dataPlotContainer;
+    let container, stats;
+    let camera, controls, scene, renderer;
+    let leavesMeshArray = [];
+    const geometry = new THREE.SphereGeometry(1, 32, 16);
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
+    init(cosmos);
+    initMesh(scene, cosmos);
+    animate();
+
+    function initMesh(scene, cosmos) {
+        clean(scene);
+        leavesMeshArray = makeInstanced(geometry, leaves, scene, leavesMeshArray, colorScale);
+        cosmos.getUniverseById('dimensionality-reduction-plot').setMeshes(leavesMeshArray);
+    }
+
+    function init(cosmos) {
+        // camera
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000);
+        camera.position.z = window.innerHeight / 2;
+        // renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        // scene
+        scene = new THREE.Scene();
+
+        dataPlotContainer = new WinBox({
+            'width': '50%',
+            'height': '50%',
+            onresize: function (width, height) {
+                // Update camera and renderer on window resize
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            },
+        });
+
+        const rect = dataPlotContainer.body.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+
+        renderer.setSize(width, height);
+        container = dataPlotContainer.body;
+        container.appendChild(renderer.domElement);
+
+        // stats
+        stats = new Stats();
+        container.appendChild(stats.dom);
+
+        const environment = new RoomEnvironment(renderer);
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmremGenerator.fromScene(environment).texture;
+        environment.dispose();
+
+        // renderpasses
+        let renderPass = new RenderPass(scene, camera);
+        renderPass.enabled = false;
+        let taaRenderPass = new TAARenderPass(scene, camera);
+        let outputPass = new OutputPass();
+
+        let composer = new EffectComposer(renderer);
+        composer.addPass(renderPass);
+        composer.addPass(taaRenderPass);
+        composer.addPass(outputPass);
+
+        //
+        controls = new OrbitControls(camera, renderer.domElement);
+        Object.assign(window, { scene });
+
+        cosmos.registerUniverse('dimensionality-reduction-plot', new Universe(camera, renderer, container, controls, scene, composer, null, window));
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        stats.update();
+        render();
+    }
+
+    function render() {
+        renderer.render(scene, camera);
+    }
+
+}

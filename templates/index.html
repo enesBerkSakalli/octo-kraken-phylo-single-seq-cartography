@@ -162,39 +162,21 @@
 
       import * as THREE from 'three';
       import Stats from 'three/addons/libs/stats.module.js';
-      import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       import { FlyControls } from 'three/addons/controls/FlyControls.js';
       import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
       import WinBox from "https://unpkg.com/winbox@0.2.82/src/js/winbox.js";
-
       import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
       import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
       import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js';
       import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
       import { makeLinks, makeNodes } from "./treeIndex.js"
       import { makeInstanced } from "./dimensionalityReductionPlotter.js"
       import { createCamera, configureLightingAndReflections, createRenderer, configurePostProcessing } from "./treeIndex.js"
-      import { highlightNodes, highlightLeaves, createAndAddTreeElementsToScene } from "./treeIndex.js"
-      import { CosmosController, Universe } from "./Cosmos.js"
+      import { highlightNodes, highlightLeaves, createAndAddTreeElementsToScene, initializeNodeSelectionAndHighlighting } from "./treeIndex.js"
+      import { CosmosController, Universe, animateUniverse } from "./Cosmos.js"
+      import { initializeDimensionalityReductionPlot } from "./dimensionalityReductionPlotter.js"
+      import { initializeTreeDimensionPlot } from "./treeIndex.js"
 
-
-      function clean(scene) {
-
-        const meshes = [];
-
-        scene.traverse(function (object) {
-          if (object.isMesh) meshes.push(object);
-        });
-
-        for (let i = 0; i < meshes.length; i++) {
-          const mesh = meshes[i];
-          mesh.material.dispose();
-          mesh.geometry.dispose();
-          scene.remove(mesh);
-        }
-      }
 
       function assignUniqueIds(root) {
         let uidCounter = 0;
@@ -221,9 +203,14 @@
 
               let width = window.innerWidth;
               let height = window.innerHeight;
-              let leavesMeshArray = [];
               let nodesMeshArray = [];
-              let group_color = data.gr;
+              let tree = constructTree(data, false, 'application-container');
+              assignUniqueIds(tree);
+
+              let links = tree.links();
+              let nodes = tree.descendants();
+              let leaves = tree.leaves();
+
 
               const colorScale = d3.scaleOrdinal()
                 .domain(d3.range(data.groups[data.groups.length - 1] + 1))
@@ -231,269 +218,15 @@
 
               var cosmos = new CosmosController();
 
-              function initializeDimensionalityReductionPlot() {
-                let dataPlotContainer;
-                let container, stats;
-                let camera, controls, scene, renderer;
-                const geometry = new THREE.SphereGeometry(1, 32, 16);
+              //document.getElementById('data-value-plot-button').addEventListener("click", function (e) {
+              initializeDimensionalityReductionPlot(cosmos, leaves, colorScale);
+              // });
 
-                init();
-                initMesh(scene);
-                animate();
-
-                function initMesh(scene) {
-                  clean(scene);
-                  makeInstanced(geometry, leaves, scene, leavesMeshArray, colorScale);
-                }
-
-                function init() {
-                  // camera
-
-
-                  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000);
-                  camera.position.z = window.innerHeight / 2;
-                  // renderer
-                  renderer = new THREE.WebGLRenderer({ antialias: true });
-                  renderer.setPixelRatio(window.devicePixelRatio);
-                  // scene
-                  scene = new THREE.Scene();
-
-                  dataPlotContainer = new WinBox({
-                    'width': '50%',
-                    'height': '50%',
-                    onresize: function (width, height) {
-                      // Update camera and renderer on window resize
-                      camera.aspect = width / height;
-                      camera.updateProjectionMatrix();
-                      renderer.setSize(width, height);
-                    },
-                  });
-
-                  const rect = dataPlotContainer.body.getBoundingClientRect();
-                  width = rect.width;
-                  height = rect.height;
-
-                  renderer.setSize(width, height);
-                  container = dataPlotContainer.body;
-                  container.appendChild(renderer.domElement);
-
-                  // stats
-                  stats = new Stats();
-                  container.appendChild(stats.dom);
-
-                  const environment = new RoomEnvironment(renderer);
-                  const pmremGenerator = new THREE.PMREMGenerator(renderer);
-                  scene.environment = pmremGenerator.fromScene(environment).texture;
-                  environment.dispose();
-
-                  // renderpasses
-                  let renderPass = new RenderPass(scene, camera);
-                  renderPass.enabled = false;
-                  let taaRenderPass = new TAARenderPass(scene, camera);
-                  let outputPass = new OutputPass();
-
-                  let composer = new EffectComposer(renderer);
-                  composer.addPass(renderPass);
-                  composer.addPass(taaRenderPass);
-                  composer.addPass(outputPass);
-
-                  //
-                  controls = new OrbitControls(camera, renderer.domElement);
-                  Object.assign(window, { scene });
-
-                  cosmos.registerUniverse('dimensionality-reduction-plot', new Universe(camera, renderer, container, controls, scene, composer, null, window));
-                }
-
-                function animate() {
-                  requestAnimationFrame(animate);
-                  controls.update();
-                  stats.update();
-                  render();
-                }
-
-                function render() {
-                  renderer.render(scene, camera);
-                }
-
-              }
-
-              document.getElementById('data-value-plot-button').addEventListener("click", function (e) {
-                initializeDimensionalityReductionPlot();
-              });
-
-              //document.getElementById('modal-tree-dimension-button').addEventListener('click', (e) => {
-              function generateHyperbolicCoordinates(root) {
-                // Calculate polar coordinates and adjust for hyperbolic space
-                root.each((d) => {
-                  const angle = d.angle;
-                  const radius = Math.log(1 + d.radius + 1);  // Adjusting radius for hyperbolic space
-                  d.x = radius * Math.cos(angle);
-                  d.y = radius * Math.sin(angle);
-                });
-
-                // Find the point with the maximum distance from the origin
-                let maxDistance = 0;
-                root.each((d) => {
-                  const distance = Math.sqrt(d.x * d.x + d.y * d.y);
-                  if (distance > maxDistance) {
-                    maxDistance = distance;
-                  }
-                });
-
-                // Scale down all points by the maximum distance
-                const scaleFactor = 1 / maxDistance;
-                root.each((d) => {
-                  d.x *= scaleFactor;
-                  d.y *= scaleFactor;
-                });
-
-                // Transform to Poincaré disk model
-                root.each((node) => {
-
-                  const r = Math.log(1 + node.radius + 1); // Adjusting radius for hyperbolic space
-                  const theta = node.angle;
-                  const z = node.depth;
-
-                  const x = Math.tanh(r / 2) * Math.cos(theta);
-                  const y = Math.tanh(r / 2) * Math.sin(theta);
-
-                  // Ensure the point is inside the unit ball
-                  const scale = 1 / Math.sqrt(1 + x * x + y * y + z * z);
-                  node.x = x * scale;
-                  node.y = y * scale;
-                  node.z = z * scale;
-
-                });
-              }
-
-
-              let tree = constructTree(data, false, 'application-container');
-              // generateHyperbolicCoordinates(tree);
-              assignUniqueIds(tree);
-
-              let links = tree.links();
-              let nodes = tree.descendants();
-              let leaves = tree.leaves();
-
-              initializeTreeDimensionPlot();
-              console.log(colorScale)
-              createAndAddTreeElementsToScene(nodes, links, leaves, tree, cosmos.getUniverseById('tree-plot'), nodesMeshArray, colorScale);
+              initializeTreeDimensionPlot(cosmos, colorScale);
+              createAndAddTreeElementsToScene(nodes, links, leaves, tree, cosmos.getUniverseById('tree-plot'), cosmos, colorScale);
               animateUniverse(cosmos.getUniverseById('tree-plot'));
+              initializeNodeSelectionAndHighlighting(cosmos, colorScale);
 
-              function initTreeDimensionGUI() {
-                const effectController = {
-                  showDots: true,
-                  showLines: true,
-                  limitConnections: false,
-                };
-                let gui = new GUI();
-                gui.add(effectController, 'showDots');
-                gui.add(effectController, 'showLines')
-                return gui;
-              }
-
-              function initializeTreeDimensionPlot() {
-                // camera
-                let camera = createCamera(width, height)
-                // renderer
-                let renderer = createRenderer(width, height);
-                // scene
-                let scene = new THREE.Scene();
-                // stats
-                let stats = new Stats();
-                // listeners
-                let treeDimensionBox = new WinBox({
-                  'width': '75%',
-                  'height': '75%',
-                  onresize: function (width, height) {
-                    // Update camera and renderer on window resize
-                    camera.aspect = width / height;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(width, height);
-                  },
-                  onfullscreen: function () {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                  },
-                });
-
-                const rect = treeDimensionBox.body.getBoundingClientRect();
-                width = rect.width;
-                height = rect.height;
-
-                configureLightingAndReflections(renderer, scene);
-                // controls
-                let controls = new OrbitControls(camera, renderer.domElement);
-                let composer = new EffectComposer(renderer);
-                configurePostProcessing(composer, scene, camera);
-
-                let container = treeDimensionBox.body;
-                container.appendChild(renderer.domElement);
-                container.appendChild(stats.dom);
-
-                let gui = initTreeDimensionGUI();
-
-                initializeNodeSelectionAndHighlighting(container, camera, nodesMeshArray);
-                // camera, renderer, container, controller, scene
-                cosmos.registerUniverse('tree-plot', new Universe(camera, renderer, container, controls, scene, gui, window));
-
-              }
-
-              function animateUniverse(universe) {
-
-                let controls = universe.controller;
-                let scene = universe.scene;
-                let renderer = universe.renderer;
-                let camera = universe.camera;
-
-                function animate() {
-                  requestAnimationFrame(animate);
-                  controls.update();
-                  renderer.render(scene, camera);
-                }
-                animate();
-              }
-
-              function initializeNodeSelectionAndHighlighting(container, camera, nodesMeshArray) {
-
-                let rayCaster = new THREE.Raycaster();
-                let mouse = new THREE.Vector2();
-
-                container.addEventListener('click', (event) => {
-
-                  let cachedClientRect = container.getBoundingClientRect();
-
-                  mouse.x = ((event.clientX - cachedClientRect.left) / cachedClientRect.width) * 2 - 1;
-                  mouse.y = -((event.clientY - cachedClientRect.top) / cachedClientRect.height) * 2 + 1;
-
-                  rayCaster.setFromCamera(mouse, camera);
-
-                  const intersects = rayCaster.intersectObjects(nodesMeshArray);
-
-                  if (intersects.length > 0) {
-                    handleNodeClick(intersects[0].object);
-                  }
-
-                }, false);
-
-
-                function handleNodeClick(clickedNode) {
-                  let nodes = clickedNode.node.descendants();
-                  if (!cosmos.checkIfUniverseExists('dimensionality-reduction-plot')) {
-                    initializeDimensionalityReductionPlot();
-                    highlightLeaves(nodes, leavesMeshArray, colorScale);
-                  } else {
-                    highlightLeaves(nodes, leavesMeshArray, colorScale);
-                  }
-                  highlightNodes(nodes, nodesMeshArray);
-                }
-
-
-              }
-
-
-              //});
 
             });
 

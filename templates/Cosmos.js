@@ -10,7 +10,17 @@ export class Universe {
         this.composer = composer;
         this.gui = gui;
         this.window = window;
+        this.mesh = null;        
     }
+
+    getMeshes() {
+        return this.mesh;
+    }
+
+    setMeshes(mesh) {
+        this.mesh = mesh;
+    }
+
 
 }
 
@@ -33,3 +43,20 @@ export class CosmosController {
     }
 
 }
+
+
+export function animateUniverse(universe) {
+
+    let controls = universe.controller;
+    let scene = universe.scene;
+    let renderer = universe.renderer;
+    let camera = universe.camera;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  }
+

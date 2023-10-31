@@ -199,7 +199,7 @@ export class TreeConstructor {
   calcScale(minWindowSize, maxRadius, factor) {
     return minWindowSize / factor / maxRadius;
   }
-    
+
 }
 
 /**
@@ -239,7 +239,7 @@ export default function constructTree(tree, ignoreBranchLengths, container, opti
     height = options['height'];
   }
 
- 
+
   // Calculate the margin for the container. It is 20% of the smaller dimension of the container
   // If 'margin' is specified in options, use it instead
   let margin = width < height ? width * 0.20 : height * 0.20;

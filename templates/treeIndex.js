@@ -4,6 +4,12 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { initializeDimensionalityReductionPlot } from './dimensionalityReductionPlotter.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { Universe } from './Cosmos.js';
+
 
 export function makeLinks(links, leaves, scene, tree) {
     const linesGeometry = new THREE.BufferGeometry();
@@ -83,8 +89,12 @@ export function makeBezierLinks(links, leaves, scene, tree) {
     });
 }
 
-export function makeNodes(geometry, nodes, scene, tree, nodeMeshedArray, colorScale) {
+export function makeNodes(geometry, nodes, scene, tree, cosmos, colorScale) {
     // Initialize a 4x4 transformation matrix
+
+    let nodesMeshArray = [];
+
+    console.log(cosmos)
 
     // Iterate over each node in the nodes array
     for (let i = 0; i < nodes.length; i++) {
@@ -93,9 +103,8 @@ export function makeNodes(geometry, nodes, scene, tree, nodeMeshedArray, colorSc
         let hexColor = "#e5d0ff";
         if (colorScale && !nodes[i].children) {
             hexColor = colorScale(nodes[i].data.values.group);
-            console.log(hexColor);
         }
-        
+
         let material = new THREE.MeshStandardMaterial({
             color: nodes[i].children ? 0xffffff : hexColor, // White for internal nodes, random for leaves
             alphaHash: true,
@@ -124,11 +133,20 @@ export function makeNodes(geometry, nodes, scene, tree, nodeMeshedArray, colorSc
         mesh.node = nodes[i];
 
         // Add the mesh to the array of node meshes for later access
-        nodeMeshedArray.push(mesh);
+        nodesMeshArray.push(mesh);
 
         // Add the mesh to the scene, making it visible
         scene.add(mesh);
     }
+    cosmos.getUniverseById('tree-plot').setMeshes(nodesMeshArray);
+
+}
+
+
+export function createAndAddTreeElementsToScene(nodes, links, leaves, tree, universe, cosmos, colorScale) {
+    const geometry = new THREE.SphereGeometry(2, 32, 16);
+    makeNodes(geometry, nodes, universe.scene, tree, cosmos, colorScale);
+    makeBezierLinks(links, leaves, universe.scene, tree);
 }
 
 
@@ -194,37 +212,40 @@ export function configurePostProcessing(composer, scene, camera) {
 
 export function highlightLeaves(nodes, leavesMeshArray, colorScale) {
 
-    leavesMeshArray.forEach((nodeMesh) => {
+    leavesMeshArray.forEach((leaveMesh) => {
         let hexColor = 0xffffff;
         if (colorScale) {
-            hexColor = colorScale(nodeMesh.leave.data.values.group);
+            hexColor = colorScale(leaveMesh.leave.data.values.group);
             hexColor = hexColor.replace('#', '0x');
         }
-        nodeMesh.material.color.setHex(hexColor); // Set to red
+        leaveMesh.material.color.setHex(hexColor);
     });
 
     nodes.forEach((descendant) => {
-        let hexColor = 0xffffff;
         leavesMeshArray.forEach((leaveMesh) => {
             if (leaveMesh.leave.uid === descendant.uid) {
-                leaveMesh.material.color.setHex(0xff0000); // Set to red
-            } else {
-                if (colorScale) {
-                    hexColor = colorScale(leaveMesh.leave.data.values.group);
-                    hexColor = hexColor.replace('#', '0x');
-                    leaveMesh.material.color.setHex(hexColor);
-                }
+                leaveMesh.material.color.setHex(0xff0000); // Set to red                
             }
         });
     });
 }
 
 
-export function highlightNodes(nodes, nodesMeshArray) {
+export function highlightNodes(nodes, nodesMeshArray, colorScale) {
     let whiteHex = 0xffffff;
 
     nodesMeshArray.forEach((nodeMesh) => {
         nodeMesh.material.color.setHex(whiteHex); // Set to red
+
+        if (!nodeMesh.node.children) {
+            if (colorScale) {
+                let hexColor = colorScale(nodeMesh.node.data.values.group);
+                hexColor = hexColor.replace('#', '0x');
+                nodeMesh.material.color.setHex(hexColor);
+            }
+        }
+
+
     });
 
     nodes.forEach((descendant) => {
@@ -237,8 +258,109 @@ export function highlightNodes(nodes, nodesMeshArray) {
 }
 
 
-export function createAndAddTreeElementsToScene(nodes, links, leaves, tree, universe, nodesMeshedArray, colorScale) {
-    const geometry = new THREE.SphereGeometry(2, 32, 16);
-    makeNodes(geometry, nodes, universe.scene, tree, nodesMeshedArray, colorScale);
-    makeBezierLinks(links, leaves, universe.scene, tree);
+export function initializeNodeSelectionAndHighlighting(cosmos, colorScale) {
+
+    let rayCaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+    let treeUniverse = cosmos.getUniverseById('tree-plot');
+    let container = treeUniverse.container;
+    let camera = treeUniverse.camera;
+    let nodesMeshArray = treeUniverse.getMeshes();
+
+    container.addEventListener('click', (event) => {
+
+        console.log(cosmos)
+
+        let cachedClientRect = container.getBoundingClientRect();
+
+        mouse.x = ((event.clientX - cachedClientRect.left) / cachedClientRect.width) * 2 - 1;
+        mouse.y = -((event.clientY - cachedClientRect.top) / cachedClientRect.height) * 2 + 1;
+
+        rayCaster.setFromCamera(mouse, camera);
+
+        const intersects = rayCaster.intersectObjects(nodesMeshArray);
+
+        if (intersects.length > 0) {
+            handleNodeClick(intersects[0].object, cosmos, colorScale);
+        }
+
+    }, false);
+
+
+    function handleNodeClick(clickedNode, cosmos, colorScale) {
+        let nodes = clickedNode.node.descendants();
+        if (!cosmos.checkIfUniverseExists('dimensionality-reduction-plot')) {
+            initializeDimensionalityReductionPlot();
+            highlightLeaves(nodes, cosmos.getUniverseById('dimensionality-reduction-plot').getMeshes(), colorScale);
+        } else {
+            highlightLeaves(nodes, cosmos.getUniverseById('dimensionality-reduction-plot').getMeshes(), colorScale);
+        }
+        highlightNodes(nodes, nodesMeshArray, colorScale);
+        
+
+
+    }
+}
+
+function initTreeDimensionGUI() {
+    const effectController = {
+        showDots: true,
+        showLines: true,
+        limitConnections: false,
+    };
+    let gui = new GUI();
+    gui.add(effectController, 'showDots');
+    gui.add(effectController, 'showLines')
+    return gui;
+}
+
+
+
+export function initializeTreeDimensionPlot(cosmos, colorScale) {
+
+    let width = window.innerWidth * 0.75;
+    let height = window.innerHeight * 0.75;
+
+    // camera
+    let camera = createCamera(width, height)
+    // renderer
+    let renderer = createRenderer(width, height);
+    // scene
+    let scene = new THREE.Scene();
+    // listeners
+    let treeDimensionBox = new WinBox({
+        'width': '75%',
+        'height': '75%',
+        onresize: function (width, height) {
+            // Update camera and renderer on window resize
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        },
+        onfullscreen: function () {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        },
+    });
+
+    const rect = treeDimensionBox.body.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+
+    configureLightingAndReflections(renderer, scene);
+    // controls
+    let controls = new OrbitControls(camera, renderer.domElement);
+    let composer = new EffectComposer(renderer);
+    configurePostProcessing(composer, scene, camera);
+
+    let container = treeDimensionBox.body;
+    container.appendChild(renderer.domElement);
+
+    let gui = initTreeDimensionGUI();
+
+    cosmos.registerUniverse('tree-plot', new Universe(camera, renderer, container, controls, scene, gui, window));
+
+    // camera, renderer, container, controller, scene
+
 }
