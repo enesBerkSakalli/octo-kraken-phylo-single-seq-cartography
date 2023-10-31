@@ -159,16 +159,10 @@
       import Gui from "../static/js/gui.js";
       import constructTree from "../static/js/TreeConstructor.js";
       import TreeDisplay from "../static/js/TreeDisplay.js";
-
       import * as THREE from 'three';
-      import Stats from 'three/addons/libs/stats.module.js';
       import { FlyControls } from 'three/addons/controls/FlyControls.js';
       import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
       import WinBox from "https://unpkg.com/winbox@0.2.82/src/js/winbox.js";
-      import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-      import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js';
-      import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
       import { makeLinks, makeNodes } from "./treeIndex.js"
       import { makeInstanced } from "./dimensionalityReductionPlotter.js"
       import { createCamera, configureLightingAndReflections, createRenderer, configurePostProcessing } from "./treeIndex.js"
@@ -203,6 +197,7 @@
 
               let width = window.innerWidth;
               let height = window.innerHeight;
+
               let nodesMeshArray = [];
               let tree = constructTree(data, false, 'application-container');
               assignUniqueIds(tree);
@@ -219,7 +214,7 @@
               var cosmos = new CosmosController();
 
               //document.getElementById('data-value-plot-button').addEventListener("click", function (e) {
-              initializeDimensionalityReductionPlot(cosmos, leaves, colorScale);
+                initializeDimensionalityReductionPlot(cosmos, leaves, colorScale);
               // });
 
               initializeTreeDimensionPlot(cosmos, colorScale);
@@ -227,6 +222,7 @@
               animateUniverse(cosmos.getUniverseById('tree-plot'));
               initializeNodeSelectionAndHighlighting(cosmos, colorScale);
 
+              
 
             });
 
