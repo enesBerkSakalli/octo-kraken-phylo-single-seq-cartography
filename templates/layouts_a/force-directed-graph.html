@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Directed Force Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="container">
+        <svg id="phylo-cello-graph"></svg>
+    </div>
+
+    <script type="module">
+        import constructTree from "../../static/js/TreeConstructor.js";
+        import TreeDisplay from "../../static/js/TreeDisplay.js";
+
+        const nodes = [];
+        const links = [];
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+
+        function buildSvgString(d) {
+            const mx = d.source.x;
+            const my = d.source.y;
+
+            const lx = d.target.x;
+            const ly = d.target.y;
+
+            const curveX = d.source.radius * Math.cos(d.target.angle);
+            const curveY = d.source.radius * Math.sin(d.target.angle);
+
+            const arcFlag = Math.abs(d.target.angle - d.source.angle) > Math.PI ? 1 : 0;
+            const sweepFlag = Math.abs(d.source.angle) < Math.abs(d.target.angle) ? 1 : 0;
+
+            return `M ${mx}, ${my} A${d.source.radius}, ${d.source.radius} ${0} ${arcFlag} ${sweepFlag} ${curveX}, ${curveY} L ${lx}, ${ly}`;
+        }
+
+        d3.json("../../static/test/random_generated_tree.json")
+            .then((data) => {
+
+                const svg = d3.select("#phylo-cello-graph");
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                let root = constructTree(data, false, 'phylo-cello-graph', {
+                    width: width,
+                    height: height
+                })
+
+                const links = root.links();
+                const nodes = root.descendants();
+                const leaves = root.leaves();
+
+                leaves.forEach((leaf) => {
+                    console.log(leaf)
+                });
+                
+
+                svg.attr("width", width)
+                    .attr("height", height)
+                    .attr("viewBox", [-width / 2, -height / 2, width, height])
+                    .attr("style", "max-width: 100%; height: auto;");
+
+                const simulation = d3.forceSimulation(nodes)
+                //.force("charge", d3.forceManyBody().strength(-0.01))
+                //.force("link", d3.forceLink(links).id(d => d.id)
+                //.strength(1)
+                //.distance(20)
+                //.iterations(10)
+                //)
+                //.force("x", d3.forceX())
+                //.force("y", d3.forceY());
+
+                // Get the number of nodes
+                let numberNodes = nodes.length;
+
+                let minRadius = 1;   // Define minimum circle radius
+                let maxRadius = 2;  // Define maximum circle radius
+
+                // Define the minimum and maximum number of nodes for the scale domain
+                let minNumNodes = 0;    // Minimum number of nodes (usually 0)
+                let maxNumNodes = 5000;  // Maximum number of nodes (change as required)
+
+                // Create a square root scale for the radius
+                let radiusScale = d3.scaleSqrt()
+                    .domain([minNumNodes, maxNumNodes])
+                    .range([minRadius, maxRadius]);
+
+
+                const link = svg.append("g")
+                    .attr("stroke", "#999")
+                    .attr("stroke-opacity", 0.6)
+                    .selectAll("path")
+                    .data(links)
+                    .join("path");
+
+                const node = svg.append("g")
+                    .selectAll("g")
+                    .data(nodes)
+                    .join("g")
+                    .call(drag(simulation));
+
+                node.append("circle")
+                    .attr("fill", (d) => {
+                        return d.children ? "#000000" : d.data.values.color
+                    })
+                    .attr("stroke", (d) => {
+                        return d.children ? "#000000" : d.data.values.color
+                    })
+                    .attr("stroke-width", "1px")
+                    .attr("r", "0.01rem");
+
+                node.append("title")
+                    .text(d => d.data.name);
+
+                simulation.on("tick", () => {
+
+                    link.attr("d", buildSvgString).attr("fill", "none")
+
+                    node
+                        .attr("transform", d => `translate(${d.x},${d.y})`);
+                });
+
+            });
+    </script>
+</body>
+
+</html>
