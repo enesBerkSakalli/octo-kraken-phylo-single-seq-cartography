@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>My first three.js app</title>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Scene, Camera, and Renderer Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // OrbitControls Setup
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Optional: to have inertia in controls
+        controls.dampingFactor = 0.1;
+        controls.rotateSpeed = 0.1;
+
+        let planet = new THREE.Mesh(
+            new THREE.SphereGeometry(5, 32, 32),
+            new THREE.MeshStandardMaterial({
+                map: new THREE.TextureLoader().load('https://i.imgur.com/4rLYz.png'),
+                bumpMap: new THREE.TextureLoader().load('https://i.imgur.com/4rLYz.png'),
+                bumpScale: 0.005,
+                specularMap: new THREE.TextureLoader().load('https://i.imgur.com/4rLYz.png'),
+                specular: new THREE.Color('grey')
+            })
+        );
+        planet.position.set(0, 0, 0);
+        scene.add(planet);
+
+
+        let moons = [];
+        let distanceFromPlanet = 10;
+        let countOfMoons = 9;
+        for (let i = 1; i < countOfMoons; ++i) {
+            let moon = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 32, 32),
+                new THREE.MeshStandardMaterial({
+                    map: new THREE.TextureLoader().load('https://i.imgur.com/4rLYz.png'),
+                    bumpMap: new THREE.TextureLoader().load('https://i.imgur.com/4rLYz.png'),
+                    bumpScale: 0.005,
+                    specularMap: new THREE.TextureLoader().load('https://i.imgur.com/4rLYz.png'),
+                    specular: new THREE.Color('grey')
+                })
+            );
+
+            let angle = Math.PI * 2 / i;
+
+            moon.userData = {
+                orbitSpeed: 0.01 * i, // Each moon has a different speed
+                angle: angle
+            };
+
+
+            moon.position.x = Math.cos(angle) * distanceFromPlanet;
+            moon.position.z = Math.tan(angle) * distanceFromPlanet;
+            moon.position.y = Math.sin(angle) * distanceFromPlanet;
+
+            moons.push(moon);
+            scene.add(moon);
+        }
+
+        // Lighting
+        const lightUp = new THREE.PointLight(0xffffff, 1000000, 10000);
+        lightUp.position.set(30, 30, 30);
+        scene.add(lightUp);
+
+
+        // Lighting
+        const lightDown = new THREE.PointLight(0xffffff, 100000, 10000);
+        lightDown.position.set(-30, -30, -30);
+        scene.add(lightDown);
+
+
+        // Camera position
+        camera.position.z = 20;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            moons.forEach(moon => {
+                moon.userData.angle += moon.userData.orbitSpeed; // Update the angle based on the orbit speed
+                moon.position.x = Math.cos(moon.userData.angle) * distanceFromPlanet;
+                moon.position.z = Math.sin(moon.userData.angle) * distanceFromPlanet;
+            });
+        
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resizing
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

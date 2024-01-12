@@ -61,6 +61,7 @@ def parse_node(pair_bracket_string):
     value_set = extract_values_in_brackets_as_dict(pair_bracket_string)
     # Parse the branch length and label
     label, dist = parse_branch_length_and_label(tree)
+    label.strip("'")
     # Return the label, the distance, the data, and the value set
     return (label, dist, data, value_set)
 
@@ -251,7 +252,7 @@ def convert_pair_bracket_string_to_json(pair_bracket_string):
 
 # Function to write a Newick string to a JSON file
 def write_pair_bracket_string_to_json(json_tree, file_name):
-    json_tree = json.dumps(json_tree, indent=4)
+    json_tree = json.dumps(json_tree, indent=4,default=float)
     with open(file_name, "w") as f:
         # Write the JSON string to the file
         f.write(json_tree)

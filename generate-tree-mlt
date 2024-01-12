@@ -1,5 +1,0 @@
-#! /bin/bash
-source ./venv/bin/activate
-python3 util.py
-mv random_generated_tree.tree ./Seq-Gen-1.3.4
-./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < ./Seq-Gen-1.3.4/random_generated_tree.tree > random_generated_tree.dat

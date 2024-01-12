@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>My first three.js app</title>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+
+        // Scene, Camera, and Renderer Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+
+        // OrbitControls Setup
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Optional: to have inertia in controls
+        controls.dampingFactor = 0.1;
+        controls.rotateSpeed = 0.1;
+
+        // Function to create hexagonal prism geometry
+        function createHexPrismGeometry(radius, height) {
+            const shape = new THREE.Shape();
+            const angle = Math.PI / 3;
+            for (let i = 0; i < 6; i++) {
+                const x = radius * Math.cos(angle * i);
+                const y = radius * Math.sin(angle * i);
+                if (i === 0) shape.moveTo(x, y);
+                else shape.lineTo(x, y);
+            }
+            shape.closePath();
+            const extrudeSettings = { depth: height, bevelEnabled: false };
+            return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        }
+
+        // Create hexagonal prisms
+        const hexMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff }); // Color set to white
+        for (let i = 0; i < 10; i++) {
+            const hexGeometry = createHexPrismGeometry(1, 0.2);
+            const hexMesh = new THREE.Mesh(hexGeometry, hexMaterial);
+            hexMesh.position.x = (i % 5) * 3;
+            hexMesh.position.y = Math.floor(i / 5) * 3;
+            scene.add(hexMesh);
+        }
+
+        // Lighting
+        const light = new THREE.PointLight(0xffffff, 200, 10000000);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        // Camera position
+        camera.position.z = 20;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resizing
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

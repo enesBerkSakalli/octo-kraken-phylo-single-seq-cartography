@@ -13,10 +13,11 @@ import numpy as np
 import random
 from sklearn.datasets._samples_generator import make_blobs
 from sklearn.cluster import KMeans
+import subprocess
 
 
 def generate_clusters(max_num_clusters=10, points_per_cluster=200, std_dev=10):
-    num_clusters = random.randint(3, max_num_clusters)
+    num_clusters = random.randint(2, max_num_clusters)
 
     cluster_centers = []  # centers of the clusters
 
@@ -32,7 +33,7 @@ def generate_clusters(max_num_clusters=10, points_per_cluster=200, std_dev=10):
                 np.random.normal(loc=center[0], scale=std_dev),
                 np.random.normal(loc=center[1], scale=std_dev),
                 np.random.normal(loc=center[1], scale=std_dev),
-                center[2],                
+                center[2],
             ]
             points.append(point)
 
@@ -95,22 +96,24 @@ def generate_tree_and_and_msa(n):
     file_name_tree = "random_generated_tree.tree"
     file_name_json = "./static/test/random_generated_tree.json"
     tree_dictionary = convert_pair_bracket_string_to_json(newick_string_added_values)
-    x, y, z, centers = generate_clusters(80, len(t.get_leaves()))
+    x, y, z, centers = generate_clusters(4, len(t.get_leaves()))
     tree_dictionary = assign_dimensionality__reduction_coordinate_tree_leaves(
         tree_dictionary, {"x": x, "y": y, "z": z, "group": centers}
     )
 
     groups = list(set(centers))
-    tree_dictionary['groups'] = groups
+    tree_dictionary["groups"] = groups
     print(tree_dictionary)
 
     write_pair_bracket_string_to_json(tree_dictionary, file_name_json)
 
-    ## subprocess.call(
-    ##     f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {file_name_phy}",
-    ##     shell=True,
-    ## )
-    ## write_msa_to_json_format(file_name_phy)
+    random_phy_file_name = "random_generated_tree.phy"
+
+    subprocess.call(
+        f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {random_phy_file_name}",
+        shell=True,
+    )
+    write_msa_to_json_format(random_phy_file_name)
 
 
 def assign_dimensionality__reduction_coordinate_tree_leaves(
@@ -152,4 +155,4 @@ def add_values_to_nodes(newick_string):
 
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(900)
+    generate_tree_and_and_msa(16)

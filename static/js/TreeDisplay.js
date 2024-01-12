@@ -717,6 +717,8 @@ export default class TreeDisplay {
       }
     }
 
+    d3.select("#application").selectAll("*").remove();
+
     // Call this instance's methods to update visualization attributes
     this.updateEdges();  // Update the edges of the tree
     this.updateExternalEdges();  // Update the external edges of the tree
