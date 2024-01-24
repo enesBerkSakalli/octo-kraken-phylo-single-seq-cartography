@@ -4,15 +4,15 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { initializeDimensionalityReductionPlot } from './dimensionalityReductionPlotter.js';
+import { initializeDimensionalityReductionPlot } from '../../dimensionalityReductionPlotter.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import { Universe } from './Cosmos.js';
-import constructTree from "../static/js/TreeConstructor.js";
-import TreeDisplay from "../static/js/TreeDisplay.js";
-import initializeLeafColorMap from "./optionHandler.js"
-import { getData, openDatabase, deepCopyJSON } from "./nebulaDB.js";
+import { Universe } from '../../Cosmos.js';
+import constructTree from "./TreeConstructor.js";
+import TreeDisplay from "../../../static/js/TreeDisplay.js";
+import initializeLeafColorMap from "../../optionHandler.js"
+import { getData, openDatabase, deepCopyJSON } from "../../nebulaDB.js";
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js';
 import { NURBSSurface } from 'three/addons/curves/NURBSSurface.js';
 
@@ -95,8 +95,17 @@ export function makeBezierLinks(links, leaves, scene, tree, cosmos, universeId, 
     links.forEach(link => {
 
         if (link.target.nodeMetric) {
-            let startPoint = new THREE.Vector3(link.target.x, link.target.y, link.target.depth * (universeHeight / maximumNodeDepth));
-            let endPoint = new THREE.Vector3(tree.x, tree.y, tree.depth * (universeHeight / maximumNodeDepth));
+            let startPoint = new THREE.Vector3(
+                link.target.x,
+                link.target.y,
+                link.target.depth * (universeHeight / maximumNodeDepth)
+
+            );
+            let endPoint = new THREE.Vector3(
+                tree.x,
+                tree.y,
+                tree.depth * (universeHeight / maximumNodeDepth)
+            );
             let hexColor = colorScale(link.target.nodeMetric.group);
 
             // startPoint = new THREE.Vector3(link.source.x, link.source.y, link.source.depth * (universeHeight / maximumNodeDepth));
@@ -112,14 +121,35 @@ export function makeBezierLinks(links, leaves, scene, tree, cosmos, universeId, 
 
             let from_target_to_root = link.target.path(tree)
             let from_target_to_root_length = from_target_to_root.length;
-            const controlPoint1 = new THREE.Vector3(from_target_to_root[from_target_to_root_length - 2].x, from_target_to_root[from_target_to_root_length - 2].y, from_target_to_root[from_target_to_root_length - 2].depth * (universeHeight / maximumNodeDepth));
 
-            const curve = new THREE.CubicBezierCurve3(startPoint, controlPoint1, endPoint);
+            const controlPoint1 = new THREE.Vector3(
+                from_target_to_root[from_target_to_root_length - 2].x,
+                from_target_to_root[from_target_to_root_length - 2].y,
+                from_target_to_root[from_target_to_root_length - 2].depth * (universeHeight / maximumNodeDepth)
+            );
+
+
+            const controlPoint2 = new THREE.Vector3(
+                from_target_to_root[from_target_to_root_length - 3].x,
+                from_target_to_root[from_target_to_root_length - 3].y,
+                from_target_to_root[from_target_to_root_length - 3].depth * (universeHeight / maximumNodeDepth)
+            );            
+
+            //let controlPoints = [];
+            //from_target_to_root.forEach((node, index) => {
+            //    controlPoints.push(new THREE.Vector3(
+            //        node.x,
+            //        node.y,
+            //        node.depth * (universeHeight / maximumNodeDepth)
+            //    ));
+            //});
+
+            const curve = new THREE.QuadraticBezierCurve3(startPoint, controlPoint2, controlPoint1, endPoint);
             const leavesCount = leafCountPerLink.get(link.source.id) || 0;
-            const tubeRadius = Math.max(0.1, Math.min(leavesCount * 5, 1)); // Adjust the scaling factor and max radius as needed
-            const tubeGeometry = new THREE.TubeGeometry(curve, 100, 0.1, 8, false);
+            const tubeRadius = Math.max(0.1, Math.min(leavesCount * 10, 1)); // Adjust the scaling factor and max radius as needed
+            const tubeGeometry = new THREE.TubeGeometry(curve, 100, tubeRadius, 8, false);
             const curveObject = new THREE.Mesh(tubeGeometry, curveMaterial);
-
+            
             //curveMaterial.color = hexColor;
 
 
@@ -140,18 +170,48 @@ export function makeBezierLinks(links, leaves, scene, tree, cosmos, universeId, 
             });
 
             //const startPoint = new THREE.Vector3(leaf.x, leaf.y, leaf.depth * (universeHeight / maximumNodeDepth));
-            const startPoint = new THREE.Vector3(Math.cos(leaf.angle) * tree.maxRadius, Math.sin(leaf.angle) * tree.maxRadius, leaf.depth * (universeHeight / maximumNodeDepth));
-            let endPoint = new THREE.Vector3(tree.x, tree.y, tree.depth * (universeHeight / maximumNodeDepth));
+            const startPoint = new THREE.Vector3(
+                Math.cos(leaf.angle) * tree.maxRadius,
+                Math.sin(leaf.angle) * tree.maxRadius,
+                leaf.depth * (universeHeight / maximumNodeDepth)
+            );
+            let endPoint = new THREE.Vector3(
+                tree.x,
+                tree.y,
+                tree.depth * (universeHeight / maximumNodeDepth)
+            );
 
             //const controlPoint1 = new THREE.Vector3((startPoint.x + endPoint.x) / 2, startPoint.y, (startPoint.z + endPoint.z) / 2);
             //const controlPoint2 = new THREE.Vector3((startPoint.x + endPoint.x) / 2, endPoint.y, (startPoint.z + endPoint.z) / 2);
             let from_target_to_root = leaf.path(tree)
             let from_target_to_root_length = from_target_to_root.length;
-            const controlPoint1 = new THREE.Vector3(from_target_to_root[from_target_to_root_length - 1].x, from_target_to_root[from_target_to_root_length - 1].y, from_target_to_root[from_target_to_root_length - 1].depth * (universeHeight / maximumNodeDepth));
+
+            const controlPoint1 = new THREE.Vector3(
+                from_target_to_root[from_target_to_root_length - 2].x,
+                from_target_to_root[from_target_to_root_length - 2].y,
+                from_target_to_root[from_target_to_root_length - 2].depth * (universeHeight / maximumNodeDepth)
+            );
+
+            const controlPoint2 = new THREE.Vector3(
+                from_target_to_root[from_target_to_root_length - 3].x,
+                from_target_to_root[from_target_to_root_length - 3].y,
+                from_target_to_root[from_target_to_root_length - 3].depth * (universeHeight / maximumNodeDepth)
+            );
 
 
-            const curve = new THREE.CubicBezierCurve3(startPoint, controlPoint1, endPoint);
-            const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.2, 8, false);
+            let controlPoints = [];
+
+            from_target_to_root.forEach((node, index) => {
+                controlPoints.push(new THREE.Vector3(
+                    node.x,
+                    node.y,
+                    node.depth * (universeHeight / maximumNodeDepth)
+                ));
+            });
+
+
+            const curve = new THREE.QuadraticBezierCurve3(startPoint, controlPoint2, controlPoint1, endPoint);
+            const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.8, 8, false);
             const curveObject = new THREE.Mesh(tubeGeometry, curveMaterial);
 
             scene.add(curveObject);
@@ -160,60 +220,71 @@ export function makeBezierLinks(links, leaves, scene, tree, cosmos, universeId, 
 }
 
 export function makeNodes(nodes, scene, tree, cosmos, colorScale, universeId) {
-    // Initialize a 4x4 transformation matrix
+    // Initialize variables
     let nodesMeshArray = [];
     let universeHeight = cosmos.getUniverseById(universeId).container.getBoundingClientRect().height;
     let maximumNodeDepth = Math.max(...nodes.map(node => node.depth));
-    let geometry = new THREE.SphereGeometry(32, 32, 16);
+    let geometry = new THREE.SphereGeometry(8, 32, 16);
 
-    // Iterate over each node in the nodes array using for...of
+    // Iterate over each node in the nodes array
     for (const node of nodes) {
-
-        // Create a unique material for each node, with its own color
+        // Set default color for nodes
         let hexColor = "#e5d0ff";
         if (colorScale && !node.children) {
             hexColor = colorScale(node.data.values.group);
         }
 
+        // Set grey color for nodes with children
+        let hexColorGrey = "#A0A0A0";
+
+        // Create material for each node
         let material = new THREE.MeshStandardMaterial({
-            color: node.children ? 0x0A84FF : hexColor, // White for internal nodes, random for leaves
+            color: node.children ? hexColorGrey : hexColor, // Grey for nodes with children, else default color
             alphaHash: true,
             opacity: 1
         });
 
-        // Create an individual mesh for each node
-        let mesh = new THREE.Mesh(geometry, material);
+        let mesh;
 
-        // Check if the current node has children (is an internal node)
+        // Set mesh position based on whether node has children
         if (node.children) {
+
+            let selectedGeometry = new THREE.SphereGeometry(2, 48, 24); // Larger geometry for nodes with children
+            // Create an individual mesh for each node
+            mesh = new THREE.Mesh(selectedGeometry, material);
+
+            // Set position for nodes with children
             mesh.position.set(
                 node.x,
                 node.y,
                 (node.depth) * (universeHeight / maximumNodeDepth)
             );
         } else {
-            // Calculate and set the position based on the angle and the tree's maximum radius
+
+            // Create an individual mesh for each node
+            mesh = new THREE.Mesh(geometry, material);
+
+            // Set position for leaf nodes
             mesh.position.set(
                 (tree.maxRadius) * Math.cos(node.angle),
                 (tree.maxRadius) * Math.sin(node.angle),
                 (node.depth) * (universeHeight / maximumNodeDepth)
             );
+
         }
 
-        // Assign a name (index) and the node data to the mesh for later reference
+        // Assign a name and node data to the mesh
         node.meshId = mesh.id;
         mesh.name = nodes.indexOf(node);
         mesh.node = node;
 
-        // Add the mesh to the array of node meshes for later access
+        // Add the mesh to the array and the scene
         nodesMeshArray.push(mesh);
-
-        // Add the mesh to the scene, making it visible
         scene.add(mesh);
     }
 
+    // Add meshes to the cosmos container
     cosmos.getUniverseById(universeId).addMeshesToContainer(nodesMeshArray, 'nodes');
-
 }
 
 
@@ -253,7 +324,6 @@ export function makeCollapsedNodes(nodes, scene, tree, cosmos, colorScale, unive
                 (node.depth) * (universeHeight / maximumNodeDepth)
             );
 
-
             const point2 = new THREE.Vector3(
                 Math.cos(node.nodeMetric.minLeafAngle) * tree.maxRadius,
                 Math.sin(node.nodeMetric.minLeafAngle) * tree.maxRadius,
@@ -280,7 +350,7 @@ export function makeCollapsedNodes(nodes, scene, tree, cosmos, colorScale, unive
 
             // Create the geometry            
             const geometry = new THREE.BufferGeometry().setFromPoints([point1, point2, point3]);
-            geometry.setIndex([0, 1, 2, ]); // Define the face using the three points
+            geometry.setIndex([0, 1, 2,]); // Define the face using the three points
 
             // Define normals for the face (required for lighting)
             geometry.computeVertexNormals();
@@ -309,9 +379,9 @@ export function makeCollapsedNodes(nodes, scene, tree, cosmos, colorScale, unive
         else if (!node.children) {
             // Calculate and set the position based on the angle and the tree's maximum radius
             mesh.position.set(
-                (tree.maxRadius) * Math.cos(node.angle),
-                (tree.maxRadius) * Math.sin(node.angle),
-                (node.depth) * (universeHeight / maximumNodeDepth)
+                tree.maxRadius * Math.cos(node.angle),
+                tree.maxRadius * Math.sin(node.angle),
+                node.depth * (universeHeight / maximumNodeDepth)
             );
             scene.add(mesh);
         }

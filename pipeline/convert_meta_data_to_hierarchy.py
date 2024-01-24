@@ -1,7 +1,7 @@
 import pandas as pd
-from advanced_tree_parser_util import convert_pair_bracket_string_to_json
+from pipeline.advanced_tree_parser_util import convert_pair_bracket_string_to_json
 import random
-from advanced_tree_parser_util import write_pair_bracket_string_to_json
+from pipeline.advanced_tree_parser_util import write_pair_bracket_string_to_json
 import sys
 
 sys.setrecursionlimit(60000)

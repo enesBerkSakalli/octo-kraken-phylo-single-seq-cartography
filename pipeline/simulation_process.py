@@ -1,5 +1,5 @@
 import networkx as nx
-from advanced_tree_parser_util import pair_to_json_encoded
+from pipeline.advanced_tree_parser_util import pair_to_json_encoded
 
 # Function to convert parsed tree to NetworkX graph
 def add_tree_to_graph(tree, graph, parent=None, counter=1):

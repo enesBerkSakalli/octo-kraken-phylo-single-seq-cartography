@@ -3,7 +3,7 @@ from ete3 import Tree
 import json
 import random
 import string
-from advanced_tree_parser_util import (
+from pipeline.advanced_tree_parser_util import (
     write_pair_bracket_string_to_json,
     convert_pair_bracket_string_to_json,
 )
@@ -107,7 +107,7 @@ def generate_tree_and_and_msa(n):
 
     write_pair_bracket_string_to_json(tree_dictionary, file_name_json)
 
-    random_phy_file_name = "random_generated_tree.phy"
+    random_phy_file_name = "random_generated_tree_140123.phy"
 
     subprocess.call(
         f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {random_phy_file_name}",
@@ -155,4 +155,4 @@ def add_values_to_nodes(newick_string):
 
 
 if __name__ == "__main__":
-    generate_tree_and_and_msa(16)
+    generate_tree_and_and_msa(200)

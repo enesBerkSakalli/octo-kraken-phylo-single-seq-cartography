@@ -84,7 +84,7 @@ export function initializeDimensionalityReductionPlot(cosmos, leaves, colorScale
     } else {
         init(cosmos, UNIVERSE_ID);
         cosmos.getUniverseById(UNIVERSE_ID).setMeshes(createClouds(leaves, colorScale));
-        createGUI(cosmos, UNIVERSE_ID);
+        // createGUI(cosmos, UNIVERSE_ID);
     }
 }
 
@@ -98,7 +98,7 @@ export function createClouds(leaves, colorScale) {
     createAxesHelper(bbox, scene);
 
     const scaleFactor = calculateScaleFactor(bbox);
-    const sphereRadius = 0.1 * scaleFactor;
+    const sphereRadius = 0.2 * scaleFactor;
     const geometry = new THREE.SphereGeometry(sphereRadius, 32, 16);
 
     let material = new THREE.MeshStandardMaterial({
@@ -148,8 +148,8 @@ function init(cosmos, UNIVERSE_ID = 'dimensionalityReductionPlot') {
 
     let dataPlotContainer = new WinBox({
         //'width': '50%',
-        'height': '50%',
-        top: '50%',
+        //height: '50%',
+        //top: '50%',
         right: '50%',
         max: true,
         onresize: function (width, height) {
@@ -188,7 +188,6 @@ function init(cosmos, UNIVERSE_ID = 'dimensionalityReductionPlot') {
     Object.assign(window, { scene });
 
     scene.background = new THREE.Color(0xffffff); // Set to white color
-
 
     cosmos.registerUniverse(UNIVERSE_ID, new Universe(camera, renderer, container, controls, scene, composer, null, window));
 }

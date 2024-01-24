@@ -1,10 +1,13 @@
 {
     "cSpell.words": [
+        "bezier",
         "newick",
         "outgroup"
     ],
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "python.formatting.provider": "none"
+    "python.formatting.provider": "none",
+    "liveServer.settings.port": 5501,
+    "editor.linkedEditing": true
 }
