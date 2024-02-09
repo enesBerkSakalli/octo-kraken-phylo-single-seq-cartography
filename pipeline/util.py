@@ -3,17 +3,17 @@ from ete3 import Tree
 import json
 import random
 import string
-from pipeline.advanced_tree_parser_util import (
-    write_pair_bracket_string_to_json,
-    convert_pair_bracket_string_to_json,
-)
 import re
 import matplotlib.pyplot as plt
 import numpy as np
 import random
 from sklearn.datasets._samples_generator import make_blobs
 from sklearn.cluster import KMeans
-import subprocess
+
+from advanced_tree_parser_util import (
+    write_pair_bracket_string_to_json,
+    convert_pair_bracket_string_to_json,
+)
 
 
 def generate_clusters(max_num_clusters=10, points_per_cluster=200, std_dev=10):
@@ -87,33 +87,40 @@ def write_msa_to_json_format(file_name):
         msa_entry["sequence"] = str(record.seq)
         multiple_sequence_alignment_dictionary.append(msa_entry)
 
-    with open("./static/test/random_generated_tree_msa.json", "w") as f:
+    with open("./../test/random_generated_tree_msa.json", "w") as f:
         f.write(json.dumps(multiple_sequence_alignment_dictionary, indent=4))
 
 
 def generate_tree_and_and_msa(n):
     t, newick_string_added_values = generate_tree(n)
+    
     file_name_tree = "random_generated_tree.tree"
-    file_name_json = "./static/test/random_generated_tree.json"
+    
+    file_name_json = "./../test/random_generated_tree.json"
+    
     tree_dictionary = convert_pair_bracket_string_to_json(newick_string_added_values)
+    
     x, y, z, centers = generate_clusters(4, len(t.get_leaves()))
+    
     tree_dictionary = assign_dimensionality__reduction_coordinate_tree_leaves(
         tree_dictionary, {"x": x, "y": y, "z": z, "group": centers}
     )
 
     groups = list(set(centers))
+    
     tree_dictionary["groups"] = groups
+    
     print(tree_dictionary)
 
     write_pair_bracket_string_to_json(tree_dictionary, file_name_json)
 
     random_phy_file_name = "random_generated_tree_140123.phy"
 
-    subprocess.call(
-        f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {random_phy_file_name}",
-        shell=True,
-    )
-    write_msa_to_json_format(random_phy_file_name)
+    # subprocess.call(
+    #     f"./Seq-Gen-1.3.4/seq-gen -mHKY -t3.0 -f0.3,0.2,0.2,0.3 -l1000 -n1 < {file_name_tree} > {random_phy_file_name}",
+    #     shell=True,
+    # )
+    # write_msa_to_json_format(random_phy_file_name)
 
 
 def assign_dimensionality__reduction_coordinate_tree_leaves(
@@ -129,7 +136,7 @@ def assign_dimensionality__reduction_coordinate_tree_leaves(
             0, len(dimensionality_reduction_coordinates["x"]) - 1
         )
         subtree["values"]["x"] = dimensionality_reduction_coordinates["x"][random_index]
-        subtree["values"]["y"] = dimensionality_reduction_coordinates["y"][random_index]
+        # subtree["values"]["y"] = dimensionality_reduction_coordinates["y"][random_index]
         subtree["values"]["z"] = dimensionality_reduction_coordinates["z"][random_index]
         subtree["values"]["group"] = dimensionality_reduction_coordinates["group"][
             random_index

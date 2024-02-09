@@ -1,0 +1,57 @@
+{
+    "name": "",
+    "length": 0.1755284955011911,
+    "children": [
+        {
+            "name": " T3",
+            "length": 1,
+            "values": {
+                "group": 0
+            },
+            "index": 0,
+            "bin": 0
+        },
+        {
+            "name": "",
+            "length": 0.8989915190139843,
+            "children": [
+                {
+                    "name": "",
+                    "length": 0.30680373035417907,
+                    "children": [
+                        {
+                            "name": "T2",
+                            "length": 1,
+                            "values": {
+                                "group": 0
+                            },
+                            "index": 1,
+                            "bin": 0
+                        },
+                        {
+                            "name": "T4",
+                            "length": 1,
+                            "values": {
+                                "group": 0
+                            },
+                            "index": 2,
+                            "bin": 0
+                        }
+                    ],
+                    "values": {}
+                },
+                {
+                    "name": "T1",
+                    "length": 1,
+                    "values": {
+                        "group": 0
+                    },
+                    "index": 3,
+                    "bin": 0
+                }
+            ],
+            "values": {}
+        }
+    ],
+    "values": {}
+}

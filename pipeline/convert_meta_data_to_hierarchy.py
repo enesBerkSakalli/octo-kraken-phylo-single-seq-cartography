@@ -1,8 +1,11 @@
 import pandas as pd
-from pipeline.advanced_tree_parser_util import convert_pair_bracket_string_to_json
 import random
-from pipeline.advanced_tree_parser_util import write_pair_bracket_string_to_json
 import sys
+from advanced_tree_parser_util import (
+    write_pair_bracket_string_to_json,
+    convert_pair_bracket_string_to_json,
+)
+
 
 sys.setrecursionlimit(60000)
 
@@ -20,14 +23,19 @@ def convert_csv_to_pandas(file_name):
 
 def assign_dimensionality__reduction_coordinates_to_nodes(subtree, pd_frame_meta_data):
     if subtree["name"] in pd_frame_meta_data.index:
-        subtree["values"]["x"] = pd_frame_meta_data.loc[subtree["name"], "UMAP_1"].astype(float)
-        subtree["values"]["y"] = pd_frame_meta_data.loc[subtree["name"], "UMAP_2"].astype(float)
+        subtree["values"]["x"] = pd_frame_meta_data.loc[
+            subtree["name"], "UMAP_1"
+        ].astype(float)
+        subtree["values"]["z"] = pd_frame_meta_data.loc[
+            subtree["name"], "UMAP_2"
+        ].astype(float)
         subtree["values"]["group"] = pd_frame_meta_data.loc[subtree["name"], "cluster"]
 
-        print(subtree["values"]["group"], subtree["values"]["x"], subtree["values"]["y"])
-        
+        # print(
+        #     subtree["values"]["group"], subtree["values"]["x"], subtree["values"]["y"]
+        # )
         # print(subtree["name"])
-                
+
         subtree["values"]["distances_to_root_tips_fix"] = pd_frame_meta_data.loc[
             subtree["name"], "distances_to_root_tips_fix"
         ]
@@ -35,13 +43,15 @@ def assign_dimensionality__reduction_coordinates_to_nodes(subtree, pd_frame_meta
             subtree["name"], "distances_to_root"
         ]
 
-        subtree["values"]["z"] = pd_frame_meta_data.loc[
-            subtree["name"], "distances_to_root_tips_fix"
-        ]
+        # subtree["values"]["y"] = pd_frame_meta_data.loc[
+        #    subtree["name"], "distances_to_root_tips_fix"
+        #
+        # ]
+
         subtree["values"]["orig.ident"] = pd_frame_meta_data.loc[
             subtree["name"], "orig.ident"
         ]
-        
+
     if "children" in subtree:
         for child in subtree["children"]:
             assign_dimensionality__reduction_coordinates_to_nodes(
@@ -58,9 +68,9 @@ def clear_node_name(tree):
     return tree
 
 
-def julia_to_json(tree_file, csv_file, json_file):
+def julia_to_json(tree_file, meta_data, output_json_file):
     pair_bracket_string = get_tree(tree_file)
-    pandas_frame = convert_csv_to_pandas(csv_file)
+    pandas_frame = convert_csv_to_pandas(meta_data)
     json_tree = convert_pair_bracket_string_to_json(pair_bracket_string)
     clear_node_name(json_tree)
     pandas_frame.index = pandas_frame.index.to_series().str.replace(
@@ -68,22 +78,22 @@ def julia_to_json(tree_file, csv_file, json_file):
     )
     json_tree["groups"] = list(set(pandas_frame["cluster"]))
     assign_dimensionality__reduction_coordinates_to_nodes(json_tree, pandas_frame)
-    write_pair_bracket_string_to_json(json_tree, json_file)
+    write_pair_bracket_string_to_json(json_tree, output_json_file)
 
 
 if __name__ == "__main__":
     julia_to_json(
-        "./julia/pancreas/alignment_obj_hvgfromspliced_genewisenormed.fasta.treefile",
-        "./julia/pancreas/metadata_pancreas.csv",
-        "./static/test/julia_pancreas.json",
+        "./../test/julia/pancreas/alignment_obj_hvgfromspliced_genewisenormed.fasta.treefile",
+        "./../test/julia/pancreas/metadata_pancreas.csv",
+        "./../test/julia/julia_pancreas.json",
     )
-    
+
     """
     tree_file = ("./static/test/pb33mk_upgma_tree.nwk")
     pair_bracket_string = get_tree(tree_file)
     pandas_frame = convert_csv_to_pandas("./static/test/pbmc3k_cell_clusters.csv")
     # print(pandas_frame.head())
-    json_tree = convert_pair_bracket_string_to_json(pair_bracket_string)
+    json_tree = convert_pair_bracket_string_to_json(pair_brackeßßt_string)
     clear_node_name(json_tree)
 
     pandas_frame.index = pandas_frame.index.to_series().str.replace(
@@ -100,4 +110,3 @@ if __name__ == "__main__":
     print(json_tree["groups"])
     write_pair_bracket_string_to_json(json_tree, "./static/test/pb33mk_upgma.json")
     """
-

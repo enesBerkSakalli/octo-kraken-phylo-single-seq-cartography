@@ -13,8 +13,6 @@ import constructTree from "./TreeConstructor.js";
 import TreeDisplay from "../../../static/js/TreeDisplay.js";
 import initializeLeafColorMap from "../../optionHandler.js"
 import { getData, openDatabase, deepCopyJSON } from "../../nebulaDB.js";
-import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js';
-import { NURBSSurface } from 'three/addons/curves/NURBSSurface.js';
 
 /**
  * Creates and adds links (as line meshes) to the scene.
@@ -330,23 +328,11 @@ export function makeCollapsedNodes(nodes, scene, tree, cosmos, colorScale, unive
                 (node.nodeMetric.leafDepth * (universeHeight / maximumNodeDepth))
             );
 
-            //const point12 = new THREE.Vector3(
-            //    (node.x + Math.cos(node.nodeMetric.minLeafAngle) * tree.maxRadius) / 2,
-            //    (node.y + Math.sin(node.nodeMetric.minLeafAngle) * tree.maxRadius) / 2,
-            //    ((node.depth) * (universeHeight / maximumNodeDepth) + (node.nodeMetric.leafDepth * (universeHeight / maximumNodeDepth))) / 2
-            //);
-
             const point3 = new THREE.Vector3(
                 Math.cos(node.nodeMetric.maxLeafAngle) * tree.maxRadius,
                 Math.sin(node.nodeMetric.maxLeafAngle) * tree.maxRadius,
                 (node.nodeMetric.leafDepth * (universeHeight / maximumNodeDepth))
             );
-
-            //const point23 = new THREE.Vector3(
-            //    (node.x + Math.cos(node.nodeMetric.maxLeafAngle) * tree.maxRadius) / 2,
-            //    (node.y + Math.sin(node.nodeMetric.maxLeafAngle) * tree.maxRadius) / 2,
-            //    ((node.depth) * (universeHeight / maximumNodeDepth) + (node.nodeMetric.leafDepth * (universeHeight / maximumNodeDepth))) / 2
-            //);
 
             // Create the geometry            
             const geometry = new THREE.BufferGeometry().setFromPoints([point1, point2, point3]);
@@ -368,14 +354,7 @@ export function makeCollapsedNodes(nodes, scene, tree, cosmos, colorScale, unive
             scene.add(triangleMesh);
 
         }
-        //else if (node.children) {
-        //    mesh.position.set(
-        //        node.x,
-        //        node.y,
-        //        (node.depth) * (universeHeight / maximumNodeDepth)
-        //    );            
-        //mesh.geometry = cubeGeometry;
-        //}
+
         else if (!node.children) {
             // Calculate and set the position based on the angle and the tree's maximum radius
             mesh.position.set(

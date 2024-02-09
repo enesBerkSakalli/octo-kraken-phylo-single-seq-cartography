@@ -343,7 +343,7 @@ export function makeCollapsedNodes(
     .getUniverseById(universeId)
     .container.getBoundingClientRect().height;
   let maximumNodeDepth = Math.max(...nodes.map((node) => node.depth));
-  const sphereGeometry = new THREE.SphereGeometry(1, 32, 16);
+  const sphereGeometry = new THREE.SphereGeometry(5, 32, 16);
 
   // Iterate over each node in the nodes array using for...of
   for (const node of nodes) {
@@ -501,7 +501,9 @@ export function createHelperGrid(scene, size, divisions) {
 
 // Creates and configures the camera
 export function createCamera(width, height) {
-  const camera = new THREE.PerspectiveCamera(1200, width / height, 1, 4000);
+  const camera = new THREE.PerspectiveCamera(30, width / height, 1, 4000);
+  // const camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
+
   camera.position.z = height / 2;
   return camera;
 }

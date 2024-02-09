@@ -119,11 +119,6 @@ export class TreeConstructor {
    * @return {void}
    */
   generateCoordinates(root) {
-    //root.each(function (d) {
-    //    d.x = d.radius * Math.cos(d.angle);
-    //    d.y = d.radius * Math.sin(d.angle);
-    //});
-
     root.each(function (d) {
       d.x = d.angle;
       d.y = d.radius;
