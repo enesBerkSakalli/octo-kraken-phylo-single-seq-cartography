@@ -1,0 +1,453 @@
+{
+    "name": "",
+    "length": 0.9964064720007121,
+    "children": [
+        {
+            "name": " T24",
+            "length": 1,
+            "values": {
+                "group": "0type",
+                "x": -1.1949981004000918,
+                "z": 6.584350676869987
+            },
+            "index": 0,
+            "bin": 0,
+            "bin_idx": 1
+        },
+        {
+            "name": "",
+            "length": 3.777667845219934,
+            "children": [
+                {
+                    "name": "",
+                    "length": 0.6942002494370791,
+                    "children": [
+                        {
+                            "name": "",
+                            "length": 1.7274507269129362,
+                            "children": [
+                                {
+                                    "name": "T16",
+                                    "length": 1,
+                                    "values": {
+                                        "group": "0type",
+                                        "x": 0.4449272102838666,
+                                        "z": 9.030217758519159
+                                    },
+                                    "index": 1,
+                                    "bin": 0,
+                                    "bin_idx": 2
+                                },
+                                {
+                                    "name": "",
+                                    "length": 0.02937700756888453,
+                                    "children": [
+                                        {
+                                            "name": "",
+                                            "length": 0.21570683224925652,
+                                            "children": [
+                                                {
+                                                    "name": "T19",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "0type",
+                                                        "x": -2.65809958370646,
+                                                        "z": 11.86774582560243
+                                                    },
+                                                    "index": 2,
+                                                    "bin": 0,
+                                                    "bin_idx": 1
+                                                },
+                                                {
+                                                    "name": "T18",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "0type",
+                                                        "x": -6.224218178875188,
+                                                        "z": 12.069543191570382
+                                                    },
+                                                    "index": 3,
+                                                    "bin": 0,
+                                                    "bin_idx": 2
+                                                }
+                                            ],
+                                            "values": {}
+                                        },
+                                        {
+                                            "name": "T1",
+                                            "length": 1,
+                                            "values": {
+                                                "group": "0type",
+                                                "x": -8.894958603184286,
+                                                "z": 11.677763394005211
+                                            },
+                                            "index": 4,
+                                            "bin": 0,
+                                            "bin_idx": 1
+                                        }
+                                    ],
+                                    "values": {}
+                                }
+                            ],
+                            "values": {}
+                        },
+                        {
+                            "name": "",
+                            "length": 0.6013587424800103,
+                            "children": [
+                                {
+                                    "name": "T5",
+                                    "length": 1,
+                                    "values": {
+                                        "group": "0type",
+                                        "x": -10.259887332060199,
+                                        "z": 10.284757569036481
+                                    },
+                                    "index": 5,
+                                    "bin": 0,
+                                    "bin_idx": 2
+                                },
+                                {
+                                    "name": "",
+                                    "length": 0.9815819831001253,
+                                    "children": [
+                                        {
+                                            "name": "T12",
+                                            "length": 1,
+                                            "values": {
+                                                "group": "0type",
+                                                "x": -10.67096004967196,
+                                                "z": 7.22931697333141
+                                            },
+                                            "index": 6,
+                                            "bin": 0,
+                                            "bin_idx": 1
+                                        },
+                                        {
+                                            "name": "",
+                                            "length": 0.3674585919747397,
+                                            "children": [
+                                                {
+                                                    "name": "T6",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "0type",
+                                                        "x": -9.468120254204209,
+                                                        "z": 3.8743870740421986
+                                                    },
+                                                    "index": 7,
+                                                    "bin": 0,
+                                                    "bin_idx": 2
+                                                },
+                                                {
+                                                    "name": "T20",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "0type",
+                                                        "x": -7.61674278979859,
+                                                        "z": 1.6108950398203552
+                                                    },
+                                                    "index": 8,
+                                                    "bin": 0,
+                                                    "bin_idx": 1
+                                                }
+                                            ],
+                                            "values": {}
+                                        }
+                                    ],
+                                    "values": {}
+                                }
+                            ],
+                            "values": {}
+                        }
+                    ],
+                    "values": {}
+                },
+                {
+                    "name": "",
+                    "length": 0.7467654405660185,
+                    "children": [
+                        {
+                            "name": "",
+                            "length": 0.1822981286051283,
+                            "children": [
+                                {
+                                    "name": "",
+                                    "length": 0.09056430996979302,
+                                    "children": [
+                                        {
+                                            "name": "",
+                                            "length": 1.5481926964284258,
+                                            "children": [
+                                                {
+                                                    "name": "T14",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "0type",
+                                                        "x": -5.399665662738875,
+                                                        "z": 0.5128300412189066
+                                                    },
+                                                    "index": 9,
+                                                    "bin": 0,
+                                                    "bin_idx": 2
+                                                },
+                                                {
+                                                    "name": "T15",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "0type",
+                                                        "x": -2.6170536697708062,
+                                                        "z": 0.8070066248048917
+                                                    },
+                                                    "index": 10,
+                                                    "bin": 0,
+                                                    "bin_idx": 1
+                                                }
+                                            ],
+                                            "values": {}
+                                        },
+                                        {
+                                            "name": "",
+                                            "length": 0.18840599332320285,
+                                            "children": [
+                                                {
+                                                    "name": "",
+                                                    "length": 0.3169586392838506,
+                                                    "children": [
+                                                        {
+                                                            "name": "",
+                                                            "length": 0.007732095086035337,
+                                                            "children": [
+                                                                {
+                                                                    "name": "",
+                                                                    "length": 0.4028994578450141,
+                                                                    "children": [
+                                                                        {
+                                                                            "name": "T7",
+                                                                            "length": 1,
+                                                                            "values": {
+                                                                                "group": "0type",
+                                                                                "x": -0.11465069717502807,
+                                                                                "z": 3.470408792847364
+                                                                            },
+                                                                            "index": 11,
+                                                                            "bin": 0,
+                                                                            "bin_idx": 2
+                                                                        },
+                                                                        {
+                                                                            "name": "T13",
+                                                                            "length": 1,
+                                                                            "values": {
+                                                                                "group": "1type",
+                                                                                "x": -2.1806634987616134,
+                                                                                "z": -7.924800028872733
+                                                                            },
+                                                                            "index": 12,
+                                                                            "bin": 1,
+                                                                            "bin_idx": 1
+                                                                        }
+                                                                    ],
+                                                                    "values": {}
+                                                                },
+                                                                {
+                                                                    "name": "T17",
+                                                                    "length": 1,
+                                                                    "values": {
+                                                                        "group": "1type",
+                                                                        "x": -2.3129860569317495,
+                                                                        "z": -7.604199977644061
+                                                                    },
+                                                                    "index": 13,
+                                                                    "bin": 1,
+                                                                    "bin_idx": 2
+                                                                }
+                                                            ],
+                                                            "values": {}
+                                                        },
+                                                        {
+                                                            "name": "",
+                                                            "length": 0.662453622266023,
+                                                            "children": [
+                                                                {
+                                                                    "name": "",
+                                                                    "length": 0.1196816234047487,
+                                                                    "children": [
+                                                                        {
+                                                                            "name": "T3",
+                                                                            "length": 1,
+                                                                            "values": {
+                                                                                "group": "1type",
+                                                                                "x": -2.5372689503366765,
+                                                                                "z": -7.392349356498771
+                                                                            },
+                                                                            "index": 14,
+                                                                            "bin": 1,
+                                                                            "bin_idx": 1
+                                                                        },
+                                                                        {
+                                                                            "name": "",
+                                                                            "length": 0.2234077708419393,
+                                                                            "children": [
+                                                                                {
+                                                                                    "name": "T10",
+                                                                                    "length": 1,
+                                                                                    "values": {
+                                                                                        "group": "1type",
+                                                                                        "x": -2.8589193598497884,
+                                                                                        "z": -7.350314171640127
+                                                                                    },
+                                                                                    "index": 15,
+                                                                                    "bin": 1,
+                                                                                    "bin_idx": 2
+                                                                                },
+                                                                                {
+                                                                                    "name": "T8",
+                                                                                    "length": 1,
+                                                                                    "values": {
+                                                                                        "group": "1type",
+                                                                                        "x": -3.111236151701025,
+                                                                                        "z": -7.48624621004081
+                                                                                    },
+                                                                                    "index": 16,
+                                                                                    "bin": 1,
+                                                                                    "bin_idx": 1
+                                                                                }
+                                                                            ],
+                                                                            "values": {}
+                                                                        }
+                                                                    ],
+                                                                    "values": {}
+                                                                },
+                                                                {
+                                                                    "name": "T2",
+                                                                    "length": 1,
+                                                                    "values": {
+                                                                        "group": "1type",
+                                                                        "x": -3.298461206801222,
+                                                                        "z": -7.5673832013141915
+                                                                    },
+                                                                    "index": 17,
+                                                                    "bin": 1,
+                                                                    "bin_idx": 2
+                                                                }
+                                                            ],
+                                                            "values": {}
+                                                        }
+                                                    ],
+                                                    "values": {}
+                                                },
+                                                {
+                                                    "name": "",
+                                                    "length": 0.2051909221832432,
+                                                    "children": [
+                                                        {
+                                                            "name": "T4",
+                                                            "length": 1,
+                                                            "values": {
+                                                                "group": "1type",
+                                                                "x": -3.5327179105931306,
+                                                                "z": -7.9902540237242965
+                                                            },
+                                                            "index": 18,
+                                                            "bin": 1,
+                                                            "bin_idx": 1
+                                                        },
+                                                        {
+                                                            "name": "T23",
+                                                            "length": 1,
+                                                            "values": {
+                                                                "group": "1type",
+                                                                "x": -3.3447505726016886,
+                                                                "z": -8.145252855053204
+                                                            },
+                                                            "index": 19,
+                                                            "bin": 1,
+                                                            "bin_idx": 2
+                                                        }
+                                                    ],
+                                                    "values": {}
+                                                }
+                                            ],
+                                            "values": {}
+                                        }
+                                    ],
+                                    "values": {}
+                                },
+                                {
+                                    "name": "",
+                                    "length": 1.2753909086842175,
+                                    "children": [
+                                        {
+                                            "name": "T11",
+                                            "length": 1,
+                                            "values": {
+                                                "group": "1type",
+                                                "x": -3.222998493809528,
+                                                "z": -8.52879573809708
+                                            },
+                                            "index": 20,
+                                            "bin": 1,
+                                            "bin_idx": 1
+                                        },
+                                        {
+                                            "name": "",
+                                            "length": 0.28284581969690487,
+                                            "children": [
+                                                {
+                                                    "name": "T9",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "1type",
+                                                        "x": -2.8631358447295443,
+                                                        "z": -8.613616073579276
+                                                    },
+                                                    "index": 21,
+                                                    "bin": 1,
+                                                    "bin_idx": 2
+                                                },
+                                                {
+                                                    "name": "T22",
+                                                    "length": 1,
+                                                    "values": {
+                                                        "group": "1type",
+                                                        "x": -2.47843709002439,
+                                                        "z": -8.48059424790647
+                                                    },
+                                                    "index": 22,
+                                                    "bin": 1,
+                                                    "bin_idx": 1
+                                                }
+                                            ],
+                                            "values": {}
+                                        }
+                                    ],
+                                    "values": {}
+                                }
+                            ],
+                            "values": {}
+                        },
+                        {
+                            "name": "T21",
+                            "length": 1,
+                            "values": {
+                                "group": "1type",
+                                "x": -2.306298667969969,
+                                "z": -8.251556606397484
+                            },
+                            "index": 23,
+                            "bin": 1,
+                            "bin_idx": 2
+                        }
+                    ],
+                    "values": {}
+                }
+            ],
+            "values": {}
+        }
+    ],
+    "values": {},
+    "groups": [
+        "0type",
+        "1type"
+    ]
+}

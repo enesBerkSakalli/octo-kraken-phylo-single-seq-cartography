@@ -9,5 +9,5 @@
     },
     "python.formatting.provider": "none",
     "liveServer.settings.port": 5501,
-    "editor.linkedEditing": true
+    "editor.linkedEditing": true    
 }

@@ -1,0 +1,73 @@
+{
+    "name": "",
+    "length": 3.832932900154812,
+    "children": [
+        {
+            "name": " T1",
+            "length": 1,
+            "values": {
+                "group": "0type",
+                "x": 12.599727675755364,
+                "z": -4.029032253369878
+            },
+            "index": 0,
+            "bin": 0,
+            "bin_idx": 1
+        },
+        {
+            "name": "",
+            "length": 0.3993249739317024,
+            "children": [
+                {
+                    "name": "",
+                    "length": 1.3737839867540693,
+                    "children": [
+                        {
+                            "name": "T2",
+                            "length": 1,
+                            "values": {
+                                "group": "0type",
+                                "x": 11.025070223097408,
+                                "z": -4.034022742666969
+                            },
+                            "index": 1,
+                            "bin": 0,
+                            "bin_idx": 2
+                        },
+                        {
+                            "name": "T3",
+                            "length": 1,
+                            "values": {
+                                "group": "1type",
+                                "x": 9.56313397739343,
+                                "z": 8.440816351252504
+                            },
+                            "index": 2,
+                            "bin": 1,
+                            "bin_idx": 1
+                        }
+                    ],
+                    "values": {}
+                },
+                {
+                    "name": "T4",
+                    "length": 1,
+                    "values": {
+                        "group": "1type",
+                        "x": 8.031852536019327,
+                        "z": 8.292551504704788
+                    },
+                    "index": 3,
+                    "bin": 1,
+                    "bin_idx": 2
+                }
+            ],
+            "values": {}
+        }
+    ],
+    "values": {},
+    "groups": [
+        "0type",
+        "1type"
+    ]
+}

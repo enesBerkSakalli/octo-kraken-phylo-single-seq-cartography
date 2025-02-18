@@ -1,10 +1,11 @@
 from dendropy.simulate import treesim
+import numpy as np
+import math
+
 from advanced_tree_parser_util import (
     write_pair_bracket_string_to_json,
     convert_pair_bracket_string_to_json,
 )
-import numpy as np
-import math
 
 
 def index_leaves(node, index=0):
@@ -62,7 +63,7 @@ def categorize_tree_nodes_into_bins(node, r_array):
         for r in r_array:
             if node["index"] >= r["begin"] and node["index"] <= r["end"]:
                 node["bin"] = r["bin"]
-                node["values"]["group"] = r["bin"]
+                node["values"]["group"] = f'{r["bin"]}type'
 
     if "children" in node:
         for child in node["children"]:
@@ -157,11 +158,11 @@ def coordinates(node, ratio_array, bin_counts, noise_level=0.1):
 
 
 if "__main__" == __name__:
-    cell_count = 8
+    cell_count = 4
     k = 2
 
     t = treesim.birth_death_tree(
-        birth_rate=1.0, death_rate=0.5, num_extant_tips=cell_count
+        birth_rate=0.2, death_rate=0, num_extant_tips=cell_count
     )
 
     t.print_plot()
@@ -169,6 +170,8 @@ if "__main__" == __name__:
     newick_tree = t.as_string("newick")
 
     newick_tree = newick_tree.replace("[&R]", "")
+
+    print(newick_tree)
 
     bin_segments = create_equal_segments_with_bins(cell_count, k)
 
@@ -190,8 +193,8 @@ if "__main__" == __name__:
 
     coordinates(t_structure, bin_segments, bin_counts)
 
-    t_structure["groups"] = [str(i) for i in range(k)]
+    t_structure["groups"] = [f"{i}type" for i in range(k)]
 
     write_pair_bracket_string_to_json(
-        t_structure, "../test/random_generated_tree_circle_simulation.json"
+        t_structure, "../test/random_generated_tree_circle_simulation_new.json"
     )

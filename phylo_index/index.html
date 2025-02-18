@@ -30,10 +30,10 @@
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.22/dist/js/uikit-icons.min.js"></script>
 
     <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+    
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/umap-js@1.3.3/lib/umap-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-prim@3.2.4"></script>    
-
   </head>
 </head>
 
@@ -55,230 +55,35 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@v0.157.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@v0.157.0/examples/jsm/"
+          "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/"
         }
       }
     </script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/hull.js@1.0.0/dist/hull.min.js"></script>
 
-      function sortTreeByGroup(node) {
-        // Check if the node has children
-        if (node.children) {
-          // Check if the children are leaves (i.e., they do not have their own children)
-          const areLeaves = node.children.every(child => !child.children);
-
-          if (areLeaves) {
-            // Sort the children if they are leaves
-            node.children.sort((a, b) => {
-              if (a.values.group < b.values.group) {
-                return -1;
-              }
-              if (a.values.group > b.values.group) {
-                return 1;
-              }
-              return 0;
-            });
-          } else {
-            // Otherwise, recursively call this function on each child
-            node.children.forEach(sortTreeByGroup);
-          }
-        }
-      }
-
-      function printSorting(node) {
-        if (node.children) {
-          // Check if the children are leaves (i.e., they do not have their own children)
-          const areLeaves = node.children.every(child => !child.children);
-
-          if (areLeaves) {
-            // Sort the children if they are leaves
-            let groupList = [];
-            node.children.forEach(child => groupList.push(child.values.group));
-
-            console.log(groupList);
-          } else {
-            // Otherwise, recursively call this function on each child
-            node.children.forEach(printSorting);
-          }
-        }
-      }
-
-      // Print the sorting
-      function aggregateChildGroupMetrics(tree) {
-
-        tree.eachAfter((node) => {
-
-          // Check if the node has children and calculate max and min angles for each group
-          if (node.children && node.children.length > 0) {
-
-            let hasLeaves = node.children.some((child) => {
-              return child.children && child.children.length > 0;
-            });
-
-            if (!hasLeaves) {
-              // Initialize the summarized_groups object for each node
-              node.summarized_groups = Object.fromEntries(tree.data.groups.map(group => [group, { maxAngle: -Infinity, minAngle: Infinity, count: 0 }]));
-
-              node.children.forEach((child) => {
-
-                if (child.data.values.group !== undefined) {
-                  // Assuming each child node has a 'group' and an 'angle' property
-                  const group = child.data.values.group;
-
-                  if (node.summarized_groups[group]) {
-                    node.summarized_groups[group].maxAngle = Math.max(node.summarized_groups[group].maxAngle, child.angle);
-                    node.summarized_groups[group].minAngle = Math.min(node.summarized_groups[group].minAngle, child.angle);
-                    node.summarized_groups[group].count += 1;
-                    node.summarized_groups[group].radius = child.radius;
-                    node.summarized_groups[group].depth = child.depth;
-                  }
-
-                }
-
-              });
-            }
-          }
-        });
-
-      }
-
-      function collapseTree(root) {
-        // Recursive function to collapse nodes
-        function collapse(node, addGroupsMetrics) {
-
-          if (!node.children) {
-            return; // This is a leaf node, so return
-          }
-
-          // First, recursively collapse child nodes
-          node.children.forEach(child => {
-            collapse(child);
-          });
-
-          // After processing all children, perform the collapsing logic on the current node
-          // Check if all children are leaves and belong to the same group
-          let allChildrenAreLeaves = node.children.every(child => !child.children);
-          let leaves = node.children.filter(child => !child.children);
-
-          if (leaves.length === 0) {
-            return;
-          }
-
-          let firstChildGroup = leaves[0].data.values.group;
-          const allChildrenSameGroup = leaves.every(child => child.data.values.group === firstChildGroup);
-
-          // Collapse this node if all children are leaves and are in the same group
-          if (allChildrenAreLeaves && allChildrenSameGroup) {
-
-            let maxLeafAngle = Math.max(...leaves.map(leaf => leaf.angle));
-            let minLeafAngle = Math.min(...leaves.map(leaf => leaf.angle));
-
-            let radius = node.children[0].radius;
-            let group = node.children[0].data.values.group;
-            let leafDepth = node.children[0].depth;
-            let leafCount = node.children.length;
-
-            let nodeMetric = {
-              'group': group,
-              'radius': radius,
-              'minLeafAngle': minLeafAngle,
-              'maxLeafAngle': maxLeafAngle,
-              'depth': node.depth,
-              'leafDepth': leafDepth,
-              'leafCount': leafCount,
-            };
-
-
-            let childrenWithNodeMetric = node.children.filter(child => child.nodeMetric !== undefined && child.nodeMetric.group === firstChildGroup);
-
-            if (childrenWithNodeMetric.length !== 0) {
-
-              radius = childrenWithNodeMetric[0].nodeMetric.radius;
-              group = childrenWithNodeMetric[0].nodeMetric.group;
-              leafDepth = childrenWithNodeMetric[0].nodeMetric.leafDepth;
-              leafCount = childrenWithNodeMetric[0].nodeMetric.leafCount;
-
-              let maxLeafAngle = Math.max(...childrenWithNodeMetric.map(leaf => leaf.nodeMetric.maxLeafAngle));
-              let minLeafAngle = Math.min(...childrenWithNodeMetric.map(leaf => leaf.nodeMetric.minLeafAngle));
-
-              nodeMetric['group'] = group;
-              nodeMetric['radius'] = radius;
-              nodeMetric['minLeafAngle'] = minLeafAngle;
-              nodeMetric['maxLeafAngle'] = maxLeafAngle;
-              nodeMetric['depth'] = node.depth;
-              nodeMetric['leafDepth'] = leafDepth;
-              nodeMetric['leafCount'] = nodeMetric['leafCount'] + leafCount;
-            }
-
-            node.nodeMetric = nodeMetric;
-            node._children = node.children; // Store children in _children to 'collapse' them
-            node.children = null; // Remove children to collapse the node
-            node.data.values.group = group;
-
-          }
-
-
-        }
-        collapse(root);
-      }
-
-      function assignZeroGroundValues(node) {
-
-        if (!('children' in node)) {
-          return; // This is a leaf node, so return
-        }
-
-        // First, recursively collapse child nodes
-        node.children.forEach(child => {
-          assignZeroGroundValues(child);
-        });
-
-        if (!('values' in node)) {
-          node.values = {
-            ground_zero: 0
-          };
-        } else {
-          node.values.ground_zero = 0;
-        }
-
-      }
-
-      function assignUniqueIds(root) {
-        let uidCounter = 0;
-
-        function traverse(node) {
-          // Assign a unique identifier to the current node
-          node.uid = uidCounter++;
-
-          // If the node has children, recursively assign UIDs to them
-          if (node.children) {
-            node.children.forEach(traverse);
-          }
-        }
-
-        traverse(root);
-      }
-    </script>
-
+    
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
     <script src="../static/js/winbox.min.js"></script>
     <link href="../static/css/winbox.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
     <script type="module">
+      import constructTree from "./layouts/circular/TreeConstructor.js";
 
       // Sample data: an array of points
       import {
         createAndAddTreeElementsToScene,
-        createAndAddCollapsedTreeElementsToScene,
         initializeNodeSelectionAndHighlighting,
-        initializeRectangleTreeDimensionPlot,
-      } from "./layouts/rectangle/treeRectangle.js"
+        initializeTreeDimensionPlot,
+      } from "./layouts/circular/treeIndex.js"
+
 
       import {
         CosmosController,
         animateUniverse
       } from "./Cosmos.js"
+
       import {
         storeData,
         getData,
@@ -287,17 +92,39 @@
         deleteData
       } from "./nebulaDB.js";
 
+      
+      import { 
+        initializeFoldedTrailGraph, 
+        initializeTrailGraph, 
+        createTrailGraphLayout,
+      } from "./forceTrailGraphs.js"
+
+
+      import {
+        createStatisticsWindowAndWriteContent,
+      } from "./statisticsWindow.js"
+
+      import {
+        initializeCtGraphUniverse,
+        calculateMonophyleticCladesCtGraph,
+        createCtUniverseGraph
+      } from "./layouts/ct-graph/cellTypeGraph.js"
+
+      import { createTrailTopologyMinimalSpanningTree, createTrailTopologyWithConcaveHulls} from "./minimalSpanningTree.js"
       import { initializeDimensionalityReductionPlot } from "./dimensionalityReductionPlotter.js"
-      import { initializeFoldedTrailGraph, initializeTrailGraph , calculateFoldedTrailTopology } from "./forceTrailGraphs.js"
-      import constructTree from "./layouts/rectangle/TreeRectangleConstructor.js";
+      import { sortTreeByGroup, assignUniqueIds } from "./collapseRadialTree.js"
+      import {createTrailDelaunayMeshesForTree} from "./createDelaunayConnections.js"
+
 
       // Assuming you have an array of file names
       var files = [
-      "../test/random_generated_tree_circle_simulation.json",
-      "../test/random_generated_tree_3.json",
       "../test/julia/julia_pancreas.json",
-      "../test/random_generated_tree150123.json",
+      "../test/random_generated_tree_circle_simulation_new_060424.json",
       "../test/random_generated_tree.json",
+      "../test/random_generated_tree_circle_simulation_new.json",     
+      "../test/random_generated_tree_3.json",      
+      "../test/random_generated_tree_circle_simulation.json",
+      "../test/random_generated_tree150123.json",
       ];
 
       // Create an object to hold the selected file
@@ -319,11 +146,70 @@
 
       // Place the GUI on the page
       document.body.appendChild(gui.domElement);
-
+      
       // Main function to handle the data loading and visualization
       async function main(file_name) {
         try {
 
+          function createDirectlyForceTrailGraph(cosmos, tree, colorScale){
+                let TRAIL_GRAPH_ID = 'trail-graph-id';
+                calculateFoldedTrailTopology(tree)
+                initializeTrailGraph(cosmos, tree, colorScale, TRAIL_GRAPH_ID, '50%', '100%', '50%', '0%');
+                animateUniverse(cosmos.getUniverseById(TRAIL_GRAPH_ID));
+          }
+
+          function createFoldedTrailGraph(cosmos, treeData, colorScale, statistics){
+            let FOLDED_FORCE_TRAIL_GRAPH_ID = 'union-force-trail-graph-id';
+            let unionTree = constructTree(deepCopyJSON(treeData), false, 'application-container');
+            let windowParameter = {
+              windowWidth: "50%",
+              windowHeight: "50%",
+              windowTop: "0%",
+              windowLeft: "0%"
+            }
+            initializeFoldedTrailGraph(cosmos, unionTree, colorScale, FOLDED_FORCE_TRAIL_GRAPH_ID, windowParameter,  createTrailTopologyMinimalSpanningTree, statistics);       
+            animateUniverse(cosmos.getUniverseById(FOLDED_FORCE_TRAIL_GRAPH_ID));
+          }
+
+          function radialTreePlot(cosmos, tree, colorScale){
+            let treeUniverseId = 'tree-plot';
+            let direction = "left";
+            initializeTreeDimensionPlot(cosmos, treeUniverseId, direction);
+            createAndAddTreeElementsToScene(tree, cosmos, treeUniverseId, colorScale);
+            animateUniverse(cosmos.getUniverseById(treeUniverseId));
+            initializeNodeSelectionAndHighlighting(cosmos, colorScale, treeUniverseId);  
+          }
+
+          function createCollapsedRadialTree(cosmos, tree, colorScale){
+            collapseTree(tree);
+            let collapsedTreeUniverseId = 'collapsed-tree-plot';
+            initializeTreeDimensionPlot(cosmos, collapsedTreeUniverseId);
+            createAndAddCollapsedTreeElementsToScene(tree, collapsedTreeUniverseId, cosmos, colorScale);
+            animateUniverse(cosmos.getUniverseById(collapsedTreeUniverseId));
+          }
+
+          function createDimensionalityReductionPlot(){
+              let POINT_CLOUD_ID = 'dimensionality-reduction-plot';
+              initializeDimensionalityReductionPlot(cosmos, nodes, colorScale, POINT_CLOUD_ID);
+              animateUniverse(cosmos.getUniverseById(POINT_CLOUD_ID));
+          }
+
+          function createCellTypeGraph(treeData, colorScale){
+            let ctgraphUniverse= "ct-graph-universe"
+            initializeCtGraphUniverse(ctgraphUniverse)
+            let ctTree = constructTree(deepCopyJSON(treeData), false, 'application-container');
+            calculateMonophyleticCladesCtGraph(ctTree)
+            createCtUniverseGraph(ctTree, ctgraphUniverse, colorScale)  
+          }          
+          
+          function createColorScale(groups){
+            const colorScale = d3.scaleOrdinal()
+            .domain(d3.range(groups[groups.length - 1] + 1))
+            .range(d3.schemeTableau10);
+            return colorScale
+          }
+
+          
           const db = await openDatabase();
 
           deleteData(db, 'random_generated_tree');
@@ -331,9 +217,6 @@
 
           // Try to get the tree data from IndexedDB
           let treeData = await getData(db, 'random_generated_tree');
-
-          //assignZeroGroundValues(treeData);
-
           
           if (!treeData) {            
             // Data not found, fetch it from the server
@@ -343,12 +226,12 @@
 
           // Try to get the MSA data from IndexedDB
           let msaData = await getData(db, 'random_generated_tree_msa');
+
           if (!msaData) {
             // MSA data not found, fetch it from the server
             msaData = await d3.json("../test/random_generated_tree.json");
             await storeData(db, 'random_generated_tree_msa', msaData);
           }
-
 
           // Now you have both treeData and msaData, you can proceed with your visualization
           let width = window.innerWidth;
@@ -356,66 +239,21 @@
 
           sortTreeByGroup(treeData);
           let tree = constructTree(deepCopyJSON(treeData), false, 'application-container');
-
           await storeData(db, 'functional_tree', tree);
-
           assignUniqueIds(tree);
+          let colorScale = createColorScale(treeData.groups);
 
           d3.select("#application").attr(
             'transform',
             `translate(${width / 2}, ${height / 2})`
           );
 
-
-          const colorScale = d3.scaleOrdinal()
-            .domain(d3.range(treeData.groups[treeData.groups.length - 1] + 1))
-            .range(d3.schemeTableau10);
-
           var cosmos = new CosmosController();
-
-          // let POINT_CLOUD_ID = 'dimensionality-reduction-plot';
-          //document.getElementById('data-value-plot-button').addEventListener("click", function (e) {
-          //initializeDimensionalityReductionPlot(cosmos, nodes, colorScale, POINT_CLOUD_ID);
-          //animateUniverse(cosmos.getUniverseById(POINT_CLOUD_ID));
-
-
-          // initializeDimensionalityReductionPlot(cosmos, nodes, colorScale, POINT_CLOUD_ID_NODES);
-          // animateUniverse(cosmos.getUniverseById(POINT_CLOUD_ID_NODES));        
-          // });
-
-          let FOLDED_FORCE_TRAIL_GRAPH_ID = 'union-force-trail-graph-id';
-          let unionTree = constructTree(deepCopyJSON(treeData), false, 'application-container');
-          //document.getElementById('data-value-plot-button').addEventListener("click", function (e) {
-          // calculateFoldedTrailTopology(tree)
-          initializeFoldedTrailGraph(cosmos, unionTree, colorScale, FOLDED_FORCE_TRAIL_GRAPH_ID);          
-          animateUniverse(cosmos.getUniverseById(FOLDED_FORCE_TRAIL_GRAPH_ID));
-          console.log("Count of Leaves", tree.leaves().length)
-
-
-          let TRAIL_GRAPH_ID = 'trail-graph-id';
-          //document.getElementById('data-value-plot-button').addEventListener("click", function (e) {
-          // calculateFoldedTrailTopology(tree)
-          initializeTrailGraph(cosmos, tree, colorScale, TRAIL_GRAPH_ID);          
-          animateUniverse(cosmos.getUniverseById(TRAIL_GRAPH_ID));
-          console.log("Count of Leaves", tree.leaves().length)
-
+          createCellTypeGraph(treeData, colorScale)
+          let statistics = createStatisticsWindowAndWriteContent(treeData, colorScale)
+          createFoldedTrailGraph(cosmos, treeData, colorScale, statistics);
+          radialTreePlot(cosmos, tree,colorScale)
           
-          let treeUniverseId = 'tree-plot';
-          let direction = "left";
-          initializeRectangleTreeDimensionPlot(cosmos, treeUniverseId, direction);
-          createAndAddTreeElementsToScene(tree, cosmos, treeUniverseId, colorScale);
-          animateUniverse(cosmos.getUniverseById(treeUniverseId));
-          initializeNodeSelectionAndHighlighting(cosmos, colorScale, treeUniverseId);
-          
-
-          
-          //collapseTree(tree);
-          //let collapsedTreeUniverseId = 'collapsed-tree-plot';
-          //initializeTreeDimensionPlot(cosmos, collapsedTreeUniverseId);
-          //createAndAddCollapsedTreeElementsToScene(tree, collapsedTreeUniverseId, cosmos, colorScale);
-          //animateUniverse(cosmos.getUniverseById(collapsedTreeUniverseId));
-
-
         } catch (error) {
           console.error('An error occurred:', error);
         }

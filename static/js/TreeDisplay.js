@@ -1,6 +1,5 @@
 /** Class For drawing Hierarchical Trees. */
 export default class TreeDisplay {
-
   static colorMap = {
     defaultColor: "black",
     markedColor: "red",
@@ -14,7 +13,7 @@ export default class TreeDisplay {
   static sizeMap = {
     strokeWidth: "1px",
     fontSize: "1em",
-    circleSize: "1rem "// ,
+    circleSize: "1rem ", // ,
   };
 
   static msaMatrix = {};
@@ -29,7 +28,7 @@ export default class TreeDisplay {
     this.container = container;
     this.stateOptions = {};
     // Calculate font size based on some algorithm
-    TreeDisplay.sizeMap.circleSize = this.calculateCircleNodeRadius() // this.calculateCircleNodeRadius()
+    TreeDisplay.sizeMap.circleSize = this.calculateCircleNodeRadius(); // this.calculateCircleNodeRadius()
     TreeDisplay.sizeMap.fontSize = this.calculateFontSize(2);
     this.collapse(this.root.children);
   }
@@ -67,11 +66,7 @@ export default class TreeDisplay {
       .data(this.root.links(), (d) => this.getEdgeId(d));
 
     // EXIT old elements not present in new data.
-    edges
-      .exit()
-      .transition()
-      .style("stroke-opacity", 0)
-      .remove();
+    edges.exit().transition().style("stroke-opacity", 0).remove();
 
     // ENTER new elements present in new data.
     edges
@@ -89,7 +84,6 @@ export default class TreeDisplay {
     edges
       .attr("z-index", "-1")
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth);
-
   }
 
   /**
@@ -105,7 +99,7 @@ export default class TreeDisplay {
     // UPDATE old elements present in new data.
     colorExternalEdges
       .style("stroke", (d) => this.lookUpLeafColor(d.data.name))
-      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth);
 
     colorExternalEdges.exit().remove();
 
@@ -114,7 +108,9 @@ export default class TreeDisplay {
       .enter()
       .append("path")
       .attr("class", "edge-extension")
-      .style("stroke", (d) => { return "black " })
+      .style("stroke", (d) => {
+        return "black ";
+      })
       .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
       .attr("stroke-dasharray", 5 + ",5")
       .attr("fill", "none")
@@ -126,7 +122,9 @@ export default class TreeDisplay {
    * @return {number}
    */
   calculateFontSize(divider = 4) {
-    let fontSize = (Math.sin(2 * Math.PI / this.root.leaves().length) * this.currentMaxRadius);
+    let fontSize =
+      Math.sin((2 * Math.PI) / this.root.leaves().length) *
+      this.currentMaxRadius;
     return fontSize / divider;
   }
 
@@ -135,7 +133,7 @@ export default class TreeDisplay {
    * @return {void}
    */
   updateLeaveLabels() {
-    let leaves = this.root.leaves()//
+    let leaves = this.root.leaves(); //
 
     leaves = leaves.filter((leaf) => !leaf.collapsed);
 
@@ -165,14 +163,14 @@ export default class TreeDisplay {
       .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("fill", "black")
       .attr("text-anchor", (d) => this.anchorCalc(d))
-      .attr("font-family", "Courier New")
+      .attr("font-family", "Courier New");
     //.style("fill", (d) => this.lookUpLeafColor(d.data.name));
   }
 
   /**
-   * Updates the values displayed on the edges of the tree. 
+   * Updates the values displayed on the edges of the tree.
    * This function handles data join, updates and removal of old elements, and addition of new elements.
-   * 
+   *
    * @param {string} value - The value that needs to be displayed on the edges.
    */
   updateEdgeValues(value) {
@@ -182,7 +180,8 @@ export default class TreeDisplay {
     // JOIN new data with old svg elements
     let textLabels = this.getSvgContainer()
       .selectAll(".edge-value")
-      .data(edges,
+      .data(
+        edges,
         (d) => `edge-value-${d.source.data.name}-${d.target.data.name}`
       );
 
@@ -192,7 +191,9 @@ export default class TreeDisplay {
     // Function to set up attributes and styles for a text label
     const setTextLabelAttributes = (selection) => {
       selection
-        .attr("transform", (d) => this.orientText(d.target, (d.source.radius + d.target.radius) / 2))
+        .attr("transform", (d) =>
+          this.orientText(d.target, (d.source.radius + d.target.radius) / 2)
+        )
         .attr("text-anchor", (d) => this.anchorCalc(d))
         .text((d) => this.getNodeValue(value, d.target))
         .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
@@ -210,10 +211,10 @@ export default class TreeDisplay {
 
   /**
    * Retrieves the edge value based on the given value type.
-   * 
+   *
    * @param {string} value - The type of the value that needs to be retrieved.
    * @param {Object} d - The data object for the edge.
-   * 
+   *
    * @returns {string|undefined} - The retrieved value or undefined if not found.
    */
   getNodeValue(value, d) {
@@ -240,9 +241,9 @@ export default class TreeDisplay {
     // Calculate the angle between each leaf node in degrees
     let angle = 360 / this.root.leaves().length;
     // Calculate the circumference of the circle based on the angle and the current maximum radius
-    let circumference = (angle / 360 * (2 * this.currentMaxRadius * Math.PI));
+    let circumference = (angle / 360) * (2 * this.currentMaxRadius * Math.PI);
     // Calculate the radius of the circle node, adjusting it by subtracting a portion of the circumference to achieve the desired size
-    let circleNodeRadius = circumference - (circumference / 1.3);
+    let circleNodeRadius = circumference - circumference / 1.3;
     return circleNodeRadius;
   }
 
@@ -254,13 +255,12 @@ export default class TreeDisplay {
   updateNodeCircles() {
     let nodes = this.root;
 
-    let nodesNotCollapsed = nodes.descendants().filter((node) => node.children)
+    let nodesNotCollapsed = nodes.descendants().filter((node) => node.children);
 
     // JOIN new data with old SVG elements
     const nodeCircles = this.getSvgContainer()
       .selectAll(".node")
       .data(nodesNotCollapsed, (d) => d.data.name);
-
 
     // UPDATE old elements present in new data.
     nodeCircles
@@ -299,22 +299,22 @@ export default class TreeDisplay {
    */
   toggleAlignmentModal(d) {
     // Filter the objectsList based on existence in compareList
-    const filteredList = TreeDisplay.msaMatrix.filter(obj => {
-      return d.data.name.some(nodeTaxonName => nodeTaxonName === obj.id);
+    const filteredList = TreeDisplay.msaMatrix.filter((obj) => {
+      return d.data.name.some((nodeTaxonName) => nodeTaxonName === obj.id);
     });
 
-    let table = new Tabulator('#msa-alignment-window', {
+    let table = new Tabulator("#msa-alignment-window", {
       data: filteredList,
-      renderHorizontal: "virtual", //enable horizontal virtual DOM 
+      renderHorizontal: "virtual", //enable horizontal virtual DOM
       columns: [
         { title: "id", field: "id" },
-        { title: "Sequence", field: "sequence" }
-      ]
+        { title: "Sequence", field: "sequence" },
+      ],
     });
 
     table.setFilter("id", "sequence", { matchAll: true });
 
-    UIkit.modal('#modal-sections').toggle();
+    UIkit.modal("#modal-sections").toggle();
   }
 
   /**
@@ -345,7 +345,7 @@ export default class TreeDisplay {
     // Create a reference to the collapse menu group
     let menuGroupCollapse = d3.select("#menu-group-collapse");
 
-    menuGroupCollapse.attr('cursor', 'pointer')
+    menuGroupCollapse.attr("cursor", "pointer");
 
     // Append a circle to the collapse menu group that, when clicked, collapses the tree
     menuGroupCollapse
@@ -381,7 +381,7 @@ export default class TreeDisplay {
     // Create a reference to the MSA menu group
     let menuGroupMsa = d3.select("#menu-group-msa");
 
-    menuGroupMsa.attr('cursor', 'pointer')
+    menuGroupMsa.attr("cursor", "pointer");
 
     // Append a circle to the MSA menu group
     menuGroupMsa
@@ -404,15 +404,9 @@ export default class TreeDisplay {
       .attr("fill", "white");
 
     // After 2000ms, remove the MSA and collapse menu groups
-    d3.select("#menu-group-msa")
-      .transition()
-      .duration(2000)
-      .remove();
+    d3.select("#menu-group-msa").transition().duration(2000).remove();
 
-    d3.select("#menu-group-collapse")
-      .transition()
-      .duration(2000)
-      .remove();
+    d3.select("#menu-group-collapse").transition().duration(2000).remove();
   }
 
   /**
@@ -431,9 +425,12 @@ export default class TreeDisplay {
     const curveY = d.source.radius * Math.sin(d.target.angle);
 
     const arcFlag = Math.abs(d.target.angle - d.source.angle) > Math.PI ? 1 : 0;
-    const sweepFlag = Math.abs(d.source.angle) < Math.abs(d.target.angle) ? 1 : 0;
+    const sweepFlag =
+      Math.abs(d.source.angle) < Math.abs(d.target.angle) ? 1 : 0;
 
-    return `M ${mx}, ${my} A${d.source.radius}, ${d.source.radius} ${0} ${arcFlag} ${sweepFlag} ${curveX}, ${curveY} L ${lx}, ${ly}`;
+    return `M ${mx}, ${my} A${d.source.radius}, ${
+      d.source.radius
+    } ${0} ${arcFlag} ${sweepFlag} ${curveX}, ${curveY} L ${lx}, ${ly}`;
   }
 
   /**
@@ -460,7 +457,9 @@ export default class TreeDisplay {
    */
   orientText(d, currentMaxRadius) {
     const angle = (d.angle * 180) / Math.PI;
-    return `rotate(${angle}) translate(${currentMaxRadius}, 0) rotate(${angle < 270 && angle > 90 ? 180 : 0})`;
+    return `rotate(${angle}) translate(${currentMaxRadius}, 0) rotate(${
+      angle < 270 && angle > 90 ? 180 : 0
+    })`;
   }
 
   anchorCalc(d) {
@@ -491,19 +490,17 @@ export default class TreeDisplay {
   }
 
   /**
-  * Collapses all nodes in the tree that have a depth greater than the specified depth.
-  *
-  * @param {number} depth - The depth at which to collapse the tree.
-  * @returns {void}
-  */
+   * Collapses all nodes in the tree that have a depth greater than the specified depth.
+   *
+   * @param {number} depth - The depth at which to collapse the tree.
+   * @returns {void}
+   */
   collapseToDepth(depth) {
     const self = this; // Get a reference to your object.
 
     this.root.each((node) => {
       if (node.depth > depth) {
-
         if (node.children) {
-
           const nodeTriangle = this.getSvgContainer()
             .selectAll(".node-collapsed")
             .data([node], (d) => d.data.name);
@@ -518,7 +515,7 @@ export default class TreeDisplay {
             .attr("fill", "orange")
             .attr("d", (d) => this.createArcPath(d))
             .attr("transform", `rotate(${90})`)
-            .on('click', (e, d) => this.click(e, d))
+            .on("click", (e, d) => this.click(e, d))
             .raise();
 
           node.descendants().forEach((node) => {
@@ -526,15 +523,12 @@ export default class TreeDisplay {
               node.collapsed = false;
               node.children = node._children;
               node._children = null;
-              document
-                .getElementById(`triangle-${node.data.name}`)
-                .remove();
+              document.getElementById(`triangle-${node.data.name}`).remove();
             }
           });
 
           node._children = node.children;
           node.children = null;
-
         }
       } else {
         if (node._children) {
@@ -549,11 +543,9 @@ export default class TreeDisplay {
     this.updateExternalEdges();
     this.updateLeaveLabels();
     this.updateNodeCircles();
-
   }
 
   collapse(d) {
-
     const self = this; // Get a reference to your object.
 
     if (d.children) {
@@ -571,10 +563,11 @@ export default class TreeDisplay {
 
     leaves.sort(function (a, b) {
       return a.angle - b.angle;
-    })
+    });
 
     // Use d3's arc generator to create the path
-    let arcGenerator = d3.arc()
+    let arcGenerator = d3
+      .arc()
       .innerRadius(d.radius)
       .outerRadius(this.currentMaxRadius)
       .startAngle(leaves[0].angle)
@@ -584,22 +577,25 @@ export default class TreeDisplay {
     return arcGenerator();
   }
 
-
   createTrianglePath(d) {
-
     let leaves = d.leaves();
 
     leaves.sort(function (a, b) {
-      return a.angle - b.angle
-    })
+      return a.angle - b.angle;
+    });
 
     let path = d3.path();
     path.moveTo(d.x, d.y);
-    path.lineTo((this.currentMaxRadius) * Math.cos(leaves[0].angle), (this.currentMaxRadius) * Math.sin(leaves[0].angle));
-    path.lineTo((this.currentMaxRadius) * Math.cos(leaves[leaves.length - 1].angle), (this.currentMaxRadius) * Math.sin(leaves[leaves.length - 1].angle));
+    path.lineTo(
+      this.currentMaxRadius * Math.cos(leaves[0].angle),
+      this.currentMaxRadius * Math.sin(leaves[0].angle)
+    );
+    path.lineTo(
+      this.currentMaxRadius * Math.cos(leaves[leaves.length - 1].angle),
+      this.currentMaxRadius * Math.sin(leaves[leaves.length - 1].angle)
+    );
     path.closePath();
     return path.toString();
-
   }
 
   decollapseInitial(d) {
@@ -608,9 +604,7 @@ export default class TreeDisplay {
         node.collapsed = false;
         node.children = node._children;
         node._children = null;
-        document
-          .getElementById(`triangle-${node.data.name}`)
-          .remove();
+        document.getElementById(`triangle-${node.data.name}`).remove();
       }
     });
 
@@ -618,13 +612,10 @@ export default class TreeDisplay {
     this.updateExternalEdges();
     this.updateLeaveLabels();
     this.updateNodeCircles();
-
-
   }
 
   click(e, d) {
     if (d.children) {
-
       // JOIN new data with old SVG elements
       const nodeTriangle = this.getSvgContainer()
         .selectAll(".node-collapsed")
@@ -640,7 +631,7 @@ export default class TreeDisplay {
         .attr("fill", "orange")
         .attr("d", (d) => this.createArcPath(d))
         .attr("transform", `rotate(${90})`)
-        .on('click', (e, d) => this.click(e, d))
+        .on("click", (e, d) => this.click(e, d))
         .raise();
 
       d.descendants().forEach((node) => {
@@ -648,20 +639,15 @@ export default class TreeDisplay {
           node.collapsed = false;
           node.children = node._children;
           node._children = null;
-          document
-            .getElementById(`triangle-${node.data.name}`)
-            .remove();
+          document.getElementById(`triangle-${node.data.name}`).remove();
         }
       });
 
       d._children = d.children;
       d.children = null;
       d.collapsed = true;
-
     } else {
-      document
-        .getElementById(`triangle-${d.data.name}`)
-        .remove();
+      document.getElementById(`triangle-${d.data.name}`).remove();
       d.children = d._children;
       d._children = null;
       d.collapsed = false;
@@ -672,47 +658,46 @@ export default class TreeDisplay {
     this.updateLeaveLabels();
     this.updateNodeCircles();
 
-    if ('displayEdgeValue' in this.stateOptions) {
-      this.setGradientForEdges(this.stateOptions.displayEdgeValue);  // Update the node circles
+    if ("displayEdgeValue" in this.stateOptions) {
+      this.setGradientForEdges(this.stateOptions.displayEdgeValue); // Update the node circles
       this.updateEdgeValues(this.stateOptions.displayEdgeValue);
     }
-
   }
 
   /**
-    * Method to update the display of a tree using the provided parameters.
-    *
-    * @param {object} tree - Contains the tree data and maximum radius for visualization.
-    * @param {string}  - The ID of the DOM element where the tree is to be drawn.
-    * @param {object} options - Contains optional parameters for tree visualization.
-    * @returns {void}
-    */
+   * Method to update the display of a tree using the provided parameters.
+   *
+   * @param {object} tree - Contains the tree data and maximum radius for visualization.
+   * @param {string}  - The ID of the DOM element where the tree is to be drawn.
+   * @param {object} options - Contains optional parameters for tree visualization.
+   * @returns {void}
+   */
   updateDisplay(options) {
     // Update the existing dictionary with new values
     for (let key in options) {
-      console.log(this.stateOptions)
+      console.log(this.stateOptions);
       this.stateOptions[key] = options[key];
     }
 
     // Update this instance's attributes if corresponding options are provided
     if ("fontSize" in options) {
-      TreeDisplay.sizeMap.fontSize = `${options.fontSize}rem`;  // Update font size
+      TreeDisplay.sizeMap.fontSize = `${options.fontSize}rem`; // Update font size
     }
-    if ('strokeWidth' in options) {
-      TreeDisplay.sizeMap.strokeWidth = options.strokeWidth;  // Update stroke width
+    if ("strokeWidth" in options) {
+      TreeDisplay.sizeMap.strokeWidth = options.strokeWidth; // Update stroke width
     }
-    if ('leaveColorMap' in options) {
-      TreeDisplay.leaveColorMap = options.leaveColorMap;  // Update the color mapping of leaves
+    if ("leaveColorMap" in options) {
+      TreeDisplay.leaveColorMap = options.leaveColorMap; // Update the color mapping of leaves
     }
-    if ('msaMatrix' in options) {
-      TreeDisplay.msaMatrix = options.msaMatrix;  // Update MSA matrix
+    if ("msaMatrix" in options) {
+      TreeDisplay.msaMatrix = options.msaMatrix; // Update MSA matrix
     }
-    if ('mode' in options) {
+    if ("mode" in options) {
       if (options.mode !== "classical-phylo") {
-        console.log(options.mode)
+        console.log(options.mode);
         this.updateNodeCircles();
       } else {
-        console.log(options.mode)
+        console.log(options.mode);
         this.removeNodeCircles();
       }
     }
@@ -720,27 +705,24 @@ export default class TreeDisplay {
     d3.select("#application").selectAll("*").remove();
 
     // Call this instance's methods to update visualization attributes
-    this.updateEdges();  // Update the edges of the tree
-    this.updateExternalEdges();  // Update the external edges of the tree
-    this.updateLeaveLabels();  // Update the labels of the leaves
+    this.updateEdges(); // Update the edges of the tree
+    this.updateExternalEdges(); // Update the external edges of the tree
+    this.updateLeaveLabels(); // Update the labels of the leaves
     // Update edge values if displayEdgeValue option is provided
-    if ('displayEdgeValue' in options) {
+    if ("displayEdgeValue" in options) {
       if (options.colorMode !== "regular") {
-        this.setGradientForEdges(options.displayEdgeValue);  // Update the node circles
+        this.setGradientForEdges(options.displayEdgeValue); // Update the node circles
       } else {
         this.setToEdgesToColor();
       }
       this.updateEdgeValues(options.displayEdgeValue);
-      this.collapseToDepth(100)
+      this.collapseToDepth(100);
     }
-
-
   }
 
   setToEdgesToColor() {
     let edges = this.getSvgContainer().selectAll(".edge");
     edges.style("stroke", "black");
-
   }
 
   setGradientForEdges(PROPERTY_ACCESSOR) {
@@ -757,11 +739,9 @@ export default class TreeDisplay {
       }
     });
 
-    let scale = d3.scaleLinear()
-      .domain([min, max])
-      .range([0, 1]);
+    let scale = d3.scaleLinear().domain([min, max]).range([0, 1]);
     // Use the scale with d3.interpolateCool to map values to colors
-    let color = d => d3.interpolatePlasma(scale(d));
+    let color = (d) => d3.interpolatePlasma(scale(d));
 
     let edges = this.getSvgContainer()
       .selectAll(".edge")
@@ -771,7 +751,6 @@ export default class TreeDisplay {
       const value = this.getNodeValue(PROPERTY_ACCESSOR, d.target);
       return value ? color(value) : "grey";
     });
-
   }
 
   // Getter for container
@@ -801,12 +780,9 @@ export default class TreeDisplay {
   set leaveColorMap(value) {
     this._leaveColorMap = value;
   }
-
 }
 
-
 export class TreeMathUtils {
-
   /**
    * Converting Cartesian Coordinates to Polar Coordinates
    * @param  {Number} x -
@@ -852,7 +828,7 @@ export class TreeMathUtils {
     const maxFontSize = 1;
 
     // Calculate the font size based on the count of elements
-    const fontSize = minFontSize + (maxFontSize / count);
+    const fontSize = minFontSize + maxFontSize / count;
 
     // Return the calculated font size
     return fontSize;
@@ -864,7 +840,10 @@ export class TreeMathUtils {
     const maxRadius = 50;
 
     // Calculate the radius based on the count of elements and the dimensions of the SVG
-    const radius = Math.min(svgWidth, svgHeight) * (minRadius + (maxRadius - minRadius) * (count / 20)) / 200;
+    const radius =
+      (Math.min(svgWidth, svgHeight) *
+        (minRadius + (maxRadius - minRadius) * (count / 20))) /
+      200;
 
     // Return the calculated radius
     return radius;
@@ -874,7 +853,7 @@ export class TreeMathUtils {
     let max = TreeMathUtils.getNodeValue(value, node); // assuming each node has a 'value' property
 
     if (node.children) {
-      node.children.forEach(child => {
+      node.children.forEach((child) => {
         const childMax = TreeMathUtils.findMaxValue(child);
         max = Math.max(max, childMax);
       });
@@ -887,7 +866,7 @@ export class TreeMathUtils {
     let min = node.value; // assuming each node has a 'value' property
 
     if (node.children) {
-      node.children.forEach(child => {
+      node.children.forEach((child) => {
         const childMin = TreeMathUtils.findMinValue(child);
         min = Math.min(min, childMin);
       });
@@ -896,13 +875,12 @@ export class TreeMathUtils {
     return min;
   }
 
-
   /**
    * Retrieves the edge value based on the given value type.
-   * 
+   *
    * @param {string} value - The type of the value that needs to be retrieved.
    * @param {Object} d - The data object for the edge.
-   * 
+   *
    * @returns {string|undefined} - The retrieved value or undefined if not found.
    */
   static getNodeValue(value, d) {
@@ -919,17 +897,10 @@ export class TreeMathUtils {
       return undefined;
     }
   }
-
-
-
 }
 
 function mouseOverNode(e, d) {
-
-  d3.selectAll(".node")
-    .transition()
-    .duration(200)
-    .style("opacity", .5);
+  d3.selectAll(".node").transition().duration(200).style("opacity", 0.5);
 
   d3.select(this)
     .transition()
@@ -942,16 +913,10 @@ function mouseOverNode(e, d) {
     .duration(200)
     .style("opacity", 1)
     .style("stroke", "rgb(38, 222, 176)");
-
-
 }
 
 function mouseLeaveNode(e, d) {
-
-  d3.selectAll(".node")
-    .transition()
-    .duration(200)
-    .style("opacity", 1);
+  d3.selectAll(".node").transition().duration(200).style("opacity", 1);
 
   d3.select(this)
     .transition()
@@ -959,10 +924,5 @@ function mouseLeaveNode(e, d) {
     .style("opacity", 1)
     .style("stroke", "transparent");
 
-  d3.select("#menu-circle")
-    .transition()
-    .duration(1000)
-    .remove();
-
+  d3.select("#menu-circle").transition().duration(1000).remove();
 }
-
