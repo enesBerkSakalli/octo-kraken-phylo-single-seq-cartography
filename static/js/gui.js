@@ -1,4 +1,7 @@
 
+import TreeDisplay from './TreeDisplay.js';
+import constructTree from './TreeConstructor.js'; // Assuming constructTree is from here
+
 export default class Gui {
   constructor(
     treeList,
@@ -13,6 +16,12 @@ export default class Gui {
       "Intermedidate ",
     ];
     this.fileName = fileName;
+    this.treeDisplay = null; // Initialize treeDisplay instance holder
+    this.msaMatrix = []; // Placeholder for msaMatrix
+    this.leaveColorMap = {}; // Placeholder for leaveColorMap
+    // this.index and this.ignoreBranchLengths should be initialized, e.g.
+    this.index = 0; // Default to first tree
+    this.ignoreBranchLengths = false; // Default behavior
   }
 
   initializeMovie() {
@@ -90,12 +99,52 @@ export default class Gui {
   updateMain() {
     let tree = this.treeList[this.index];
 
+    // Ensure this.index is valid
+    if (this.index === undefined || this.index < 0 || this.index >= this.treeList.length) {
+      console.error("Invalid tree index:", this.index);
+      this.index = 0; // Reset to a safe default
+      if (!this.treeList || this.treeList.length === 0) {
+        console.error("Tree list is empty. Cannot display tree.");
+        return;
+      }
+    }
+
+    if (this.ignoreBranchLengths === undefined) {
+      this.ignoreBranchLengths = false; // Default if not set
+    }
+
     let d3tree = constructTree(
       tree,
       this.ignoreBranchLengths,
-      'application-container'
+      'application-container' // This is the SVG container ID
     );
 
+    if (this.treeDisplay) {
+      this.treeDisplay.root = d3tree;
+      this.treeDisplay.currentMaxRadius = d3tree.maxRadius;
+    } else {
+      // 'application' is the ID of the <g> element within the SVG for TreeDisplay
+      this.treeDisplay = new TreeDisplay(d3tree, d3tree.maxRadius, 'application');
+    }
+
+    // Prepare options for TreeDisplay updateDisplay
+    let displayOptions = {
+      msaMatrix: (this.msaMatrix || []), // Use instance msaMatrix
+      leaveColorMap: (this.leaveColorMap || {}), // Use instance leaveColorMap
+      fontSize: 1, // Example default, consider making configurable
+      strokeWidth: '1px', // Example default
+      mode: 'classical-phylo', // Example default
+      // If displayEdgeValue is a feature, it might be controlled by other UI elements later
+      // displayEdgeValue: 'length',
+      // colorMode: 'regular'
+    };
+
+    // If there are specific options stored in Gui instance related to display that TreeDisplay handles
+    // For example, if this.currentDisplayMode, this.currentFontSize etc. were properties of Gui
+    // displayOptions.mode = this.currentDisplayMode || 'classical-phylo';
+    // displayOptions.fontSize = this.currentFontSize || 1;
+
+    this.treeDisplay.updateDisplay(displayOptions);
   }
 
   resize() {

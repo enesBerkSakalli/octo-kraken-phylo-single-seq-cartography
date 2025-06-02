@@ -1,24 +1,6 @@
 /** Class For drawing Hierarchical Trees. */
 export default class TreeDisplay {
 
-  static colorMap = {
-    defaultColor: "black",
-    markedColor: "red",
-    strokeColor: "black",
-    changingColor: "orange",
-    defaultLabelColor: "black",
-    extensionLinkColor: "black",
-    userMarkedColor: "magenta",
-  };
-
-  static sizeMap = {
-    strokeWidth: "1px",
-    fontSize: "1em",
-    circleSize: "1rem "// ,
-  };
-
-  static msaMatrix = {};
-
   /**
    * Create a TreeDisplay.
    * @param _currentRoot
@@ -28,13 +10,33 @@ export default class TreeDisplay {
     this.currentMaxRadius = currentMaxRadius;
     this.container = container;
     this.stateOptions = {};
+
+    // Initialize instance properties
+    this.colorMap = {
+      defaultColor: "black",
+      markedColor: "red",
+      strokeColor: "black",
+      changingColor: "orange",
+      defaultLabelColor: "black",
+      extensionLinkColor: "black",
+      userMarkedColor: "magenta",
+    };
+
+    this.sizeMap = {
+      strokeWidth: "1px",
+      fontSize: "1em",
+      circleSize: "1rem ", // Kept the trailing space as in original
+    };
+
+    this.msaMatrix = {};
+    this.leaveColorMap = {}; // Initialized as empty, to be populated by options
+    this.treeColorMap = {};  // Initialized as empty
+
     // Calculate font size based on some algorithm
-    TreeDisplay.sizeMap.circleSize = this.calculateCircleNodeRadius() // this.calculateCircleNodeRadius()
-    TreeDisplay.sizeMap.fontSize = this.calculateFontSize(2);
+    this.sizeMap.circleSize = this.calculateCircleNodeRadius();
+    this.sizeMap.fontSize = this.calculateFontSize(2);
     this.collapse(this.root.children);
   }
-
-  static treeColorMap = {};
 
   /**
    * getter for the svg application container.
@@ -77,9 +79,9 @@ export default class TreeDisplay {
     edges
       .enter()
       .append("path")
-      .style("stroke", TreeDisplay.colorMap.strokeColor)
+      .style("stroke", this.colorMap.strokeColor)
       .attr("class", "edge")
-      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+      .attr("stroke-width", this.sizeMap.strokeWidth)
       .attr("fill", "none")
       .attr("id", (d) => this.getEdgeId(d))
       .attr("d", (d) => this.buildLinkPath(d))
@@ -88,7 +90,7 @@ export default class TreeDisplay {
     // UPDATE old elements present in new data.
     edges
       .attr("z-index", "-1")
-      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth);
+      .attr("stroke-width", this.sizeMap.strokeWidth);
 
   }
 
@@ -105,7 +107,7 @@ export default class TreeDisplay {
     // UPDATE old elements present in new data.
     colorExternalEdges
       .style("stroke", (d) => this.lookUpLeafColor(d.data.name))
-      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+      .attr("stroke-width", this.sizeMap.strokeWidth)
 
     colorExternalEdges.exit().remove();
 
@@ -114,8 +116,8 @@ export default class TreeDisplay {
       .enter()
       .append("path")
       .attr("class", "edge-extension")
-      .style("stroke", (d) => { return "black "})
-      .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+      .style("stroke", (d) => { return "black "}) // This was hardcoded black, leaving as is.
+      .attr("stroke-width", this.sizeMap.strokeWidth)
       .attr("stroke-dasharray", 5 + ",5")
       .attr("fill", "none")
       .attr("d", (d) => this.buildEdgeExtension(d, this.currentMaxRadius));
@@ -148,7 +150,7 @@ export default class TreeDisplay {
     textLabels
       .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("text-anchor", (d) => this.anchorCalc(d))
-      .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
+      .style("font-size", `${this.sizeMap.fontSize}`)
       .style("fill", (d) => this.lookUpLeafColor(d.data.name));
 
     textLabels.exit().remove();
@@ -160,7 +162,7 @@ export default class TreeDisplay {
       .attr("class", "leave-label")
       .attr("id", (d) => `leave-label-${d.data.name}`)
       .attr("dy", ".31em")
-      .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
+      .style("font-size", `${this.sizeMap.fontSize}`)
       .text((d) => `${d.data.name}`)
       .attr("transform", (d) => this.orientText(d, this.currentMaxRadius))
       .attr("fill", "black")
@@ -195,11 +197,11 @@ export default class TreeDisplay {
         .attr("transform", (d) => this.orientText(d.target, (d.source.radius + d.target.radius) / 2))
         .attr("text-anchor", (d) => this.anchorCalc(d))
         .text((d) => this.getNodeValue(value, d.target))
-        .style("font-size", `${TreeDisplay.sizeMap.fontSize}`)
+        .style("font-size", `${this.sizeMap.fontSize}`)
         .attr("class", "edge-value")
         .attr("dy", "-0.25em")
         .attr("font-family", "Mono Space")
-        .style("fill", TreeDisplay.colorMap.defaultLabelColor);
+        .style("fill", this.colorMap.defaultLabelColor);
     };
 
     // UPDATE old elements present in new data
@@ -279,7 +281,7 @@ export default class TreeDisplay {
       .style("z-index", "1000")
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y)
-      .style("fill", TreeDisplay.colorMap.defaultColor)
+      .style("fill", this.colorMap.defaultColor)
       // .attr("filter", "drop-shadow(0px 1px 3px rgba(0, 0, 0, 1))")
       .attr("r", `${2}px`)
       .on("click", (e, d) => this.handleNodeClick(e, d))
@@ -299,7 +301,7 @@ export default class TreeDisplay {
    */
   toggleAlignmentModal(d) {
     // Filter the objectsList based on existence in compareList
-    const filteredList = TreeDisplay.msaMatrix.filter(obj => {
+    const filteredList = this.msaMatrix.filter(obj => {
       return d.data.name.some(nodeTaxonName => nodeTaxonName === obj.id);
     });
 
@@ -479,15 +481,14 @@ export default class TreeDisplay {
      * The color map object that associates leaf names with colors.
      * @type {object}
      */
-    const leaveColorMap = TreeDisplay.leaveColorMap;
-
+    // Access instance property this.leaveColorMap directly
     /**
      * The default label color to be used if the leaf name is not found in the color map.
      * @type {string}
      */
-    const defaultLabelColor = TreeDisplay.colorMap.defaultLabelColor;
+    const defaultLabelColor = this.colorMap.defaultLabelColor;
 
-    return leaveColorMap[leafName] || defaultLabelColor;
+    return this.leaveColorMap[leafName] || defaultLabelColor;
   }
 
   /**
@@ -513,7 +514,7 @@ export default class TreeDisplay {
             .append("path")
             .attr("id", (d) => `triangle-${d.data.name}`)
             .attr("class", "node-collapsed")
-            .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+            .attr("stroke-width", this.sizeMap.strokeWidth)
             .attr("stroke", "black")
             .attr("fill", "orange")
             .attr("d", (d) => this.createArcPath(d))
@@ -635,7 +636,7 @@ export default class TreeDisplay {
         .append("path")
         .attr("id", (d) => `triangle-${d.data.name}`)
         .attr("class", "node-collapsed")
-        .attr("stroke-width", TreeDisplay.sizeMap.strokeWidth)
+        .attr("stroke-width", this.sizeMap.strokeWidth)
         .attr("stroke", "black")
         .attr("fill", "orange")
         .attr("d", (d) => this.createArcPath(d))
@@ -696,16 +697,16 @@ export default class TreeDisplay {
 
     // Update this instance's attributes if corresponding options are provided
     if ("fontSize" in options) {
-      TreeDisplay.sizeMap.fontSize = `${options.fontSize}rem`;  // Update font size
+      this.sizeMap.fontSize = `${options.fontSize}rem`;  // Update font size
     }
     if ('strokeWidth' in options) {
-      TreeDisplay.sizeMap.strokeWidth = options.strokeWidth;  // Update stroke width
+      this.sizeMap.strokeWidth = options.strokeWidth;  // Update stroke width
     }
     if ('leaveColorMap' in options) {
-      TreeDisplay.leaveColorMap = options.leaveColorMap;  // Update the color mapping of leaves
+      this.leaveColorMap = options.leaveColorMap;  // Update the color mapping of leaves
     }
     if ('msaMatrix' in options) {
-      TreeDisplay.msaMatrix = options.msaMatrix;  // Update MSA matrix
+      this.msaMatrix = options.msaMatrix;  // Update MSA matrix
     }
     if ('mode' in options) {
       if (options.mode !== "classical-phylo") {
@@ -792,13 +793,13 @@ export default class TreeDisplay {
   }
 
   // Getter and Setter for leaveColorMap
-  get leaveColorMap() {
-    return this._leaveColorMap;
-  }
+  // get leaveColorMap() { // Already an instance property, getter/setter might be redundant unless specific logic needed
+  //   return this._leaveColorMap;
+  // }
 
-  set leaveColorMap(value) {
-    this._leaveColorMap = value;
-  }
+  // set leaveColorMap(value) { // Already an instance property
+  //   this._leaveColorMap = value;
+  // }
 
 }
 
